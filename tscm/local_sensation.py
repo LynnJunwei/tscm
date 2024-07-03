@@ -42,7 +42,7 @@ class SkinTemperatureProcessor:
         self.sex = human_config.sex
         self.clo = human_config.clo
 
-    def get_mean_skin_temperature(self, skin_temperature: pd.Series):
+    def get_mean_skin_temperature(self, skin_temperature: pd.Series) -> float:
         """
         Calculate the mean skin temperature of a group of skin temperatures.
 
@@ -93,13 +93,6 @@ class SkinTemperatureProcessor:
         setpoint_upper = setpoint.loc[LIMIT_TYPE_DICT['upper']]
         setpoint_neutral = setpoint.loc[LIMIT_TYPE_DICT['neutral']]
         return setpoint_neutral, setpoint_upper, setpoint_lower
-
-    @property
-    def setpoint(self):
-        """Return a dataframe of skin temperature setpoints for neutral, upper and lower limits."""
-        _setpoint = pd.concat(self.get_setpoint())
-        _setpoint.index = ['setpoint_neutral', 'setpoint_upper', 'setpoint_lower']
-        return _setpoint
 
     def get_local_sensation(self):
         """
@@ -160,6 +153,18 @@ class SkinTemperatureProcessor:
             local_sensation[body_part] = np.clip(local_sensation_i, -4, 4)
 
         return local_sensation
+
+    @property
+    def mean_skin_temperature(self) -> float:
+        """Return the mean skin temperature."""
+        return self.get_mean_skin_temperature(self.skin_temperature)
+
+    @property
+    def setpoint(self):
+        """Return a dataframe of skin temperature setpoints for neutral, upper and lower limits."""
+        _setpoint = pd.concat(self.get_setpoint())
+        _setpoint.index = ['setpoint_neutral', 'setpoint_upper', 'setpoint_lower']
+        return _setpoint
 
     @property
     def local_sensation(self):
