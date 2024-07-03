@@ -110,11 +110,6 @@ class TSCMObject:
              whole_sensation_: Value of whole-body sensation of current iteration.
              model_num_i: Model number of current iteration.
         """
-        # metabolic rate for each iteration
-        self.human_config.met_ = self.human_config.met
-        if isinstance(self.human_config.met, pd.Series):
-            self.human_config.met_ = self.human_config.met.loc[i]
-
         if self.local_sensation_config.dynamic:
             delta_skin_temperature_ = self.delta_skin_temperature.loc[i, :]
             delta_core_temperature_ = self.delta_core_temperature.loc[i]

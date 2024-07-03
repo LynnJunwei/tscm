@@ -8,7 +8,7 @@ import math
 import pandas as pd
 import numpy as np
 
-from tscm.coefficient import coefficient_ucb, setpoint_ucb, setpoint_range_ucb, null_zone_range, setpoint_jos3
+from tscm.const import SETPOINT, SETPOINT_TYPE_DICT, SETPOINT_INDEX_DICT, LIMIT_TYPE_DICT, COEFFICIENT
 from tscm.config import HumanConfig, LocalSensationConfig
 from tscm.const import MEAN_TSK_BODY_PARTS, MEAN_TSK_COEFFICIENT
 
@@ -35,21 +35,24 @@ class SkinTemperatureProcessor:
         self.body_parts = skin_temperature.index
 
         self.mean_skin_temperature_approach = local_sensation_config.mean_skin_temperature_approach
-        self.mean_skin_temperature_substitute = local_sensation_config.mean_skin_temperature_substitute
         self.dynamic = local_sensation_config.dynamic
         self.setpoint_type = local_sensation_config.setpoint_type
 
-        self.human_config = human_config
+        self.met = human_config.met
+        self.sex = human_config.sex
+        self.clo = human_config.clo
 
     def get_mean_skin_temperature(self, skin_temperature: pd.Series):
         """
-        Return the mean skin temperature of a group of skin temperatures.
+        Calculate the mean skin temperature of a group of skin temperatures.
 
         Args:
             skin_temperature: A series of skin temperatures.
 
+        Returns:
+            The mean skin temperature of a group of skin temperatures.
+
         Raises:
-            ValueError: Index number of mean skin temperature calculation method not in {3, 4, 7, 8}.
             ValueError: Skin temperature data needed not include in input.
         """
         body_parts_needed = MEAN_TSK_BODY_PARTS[self.mean_skin_temperature_approach]
@@ -64,45 +67,50 @@ class SkinTemperatureProcessor:
             if not all(skin_temperature.isna()):
                 skin_temperature_for_mean[body_part_needed] = np.mean(skin_temperature_needed)
             else:
-                raise ValueError('Body part: {} are missing!'.format(body_part_needed))
+                raise ValueError('Body part: {} are missing!'.format(body_part_needed) +
+                                 'Please change the approach for mean skin temperature calculation.')
 
         return (body_parts_coefficient * skin_temperature_for_mean).sum()
 
     def get_setpoint(self):
+        """
+        Select the skin temperature setpoints (ranges) for different body parts.
+
+        Returns:
+            A tuple of skin temperature setpoints for neutral, upper and lower limits.
+        """
         if self.setpoint_type == 'setpoint':
-            met_value = np.piecewise(self.human_config.met_,
-                                     [self.human_config.met_ < 0.9,
-                                      0.9 <= self.human_config.met_ < 1.05,
-                                      1.05 <= self.human_config.met_ < 1.15,
-                                      1.15 <= self.human_config.met_ < 1.25,
-                                      1.25 <= self.human_config.met_],
-                                     [0.8, 1.0, 1.1, 1.2, 1.3])
-            clo_type = np.where(abs(self.human_config.clo - 0.60) <= abs(self.human_config.clo - 1.27),
-                                'Summer', 'WinterIndoor')
-            setpoint_neutral = setpoint_ucb.loc['{}-Met_{:.1f}'.format(self.human_config.clo_type, met_value), :]
-            setpoint_upper = setpoint_neutral + setpoint_range_ucb.loc['upper_limit_delta', :]
-            setpoint_lower = setpoint_neutral - setpoint_range_ucb.loc['lower_limit_delta', :]
-            return setpoint_neutral, setpoint_upper, setpoint_lower
+            met_class = min([1.3, 1.2, 1.1, 1.0, 0.8], key=lambda x: round(abs(x - self.met), 3))
+            clo_type = np.where(abs(self.clo - 0.60) <= abs(self.clo - 1.27), 'Summer', 'WinterIndoor').item()
+            setpoint = SETPOINT.loc[(SETPOINT_TYPE_DICT[self.setpoint_type],
+                                     SETPOINT_INDEX_DICT[self.setpoint_type][(clo_type, '{:.1f}'.format(met_class))])]
 
         if self.setpoint_type == 'null_zone':
-            setpoint_upper = null_zone_range.loc['upper_limit_{}'.format(self.human_config.sex), :]
-            setpoint_lower = null_zone_range.loc['lower_limit_{}'.format(self.human_config.sex), :]
-            setpoint_neutral = (setpoint_upper + setpoint_lower) / 2
-            return setpoint_neutral, setpoint_upper, setpoint_lower
+            setpoint = SETPOINT.loc[(SETPOINT_TYPE_DICT[self.setpoint_type],
+                                     SETPOINT_INDEX_DICT[self.setpoint_type][self.sex])]
 
-        if self.setpoint_type == 'setpoint_modified':
-            con1 = setpoint_jos3['met'] == np.round(self.human_config.met_, 1)
-            con2 = setpoint_jos3['clo'] == np.round(self.human_config.clo * 2, 1) / 2
-            con3 = setpoint_jos3['sex'] == self.human_config.sex
-            setpoint_df = setpoint_jos3[con1 & con2 & con3]
-            setpoint_neutral = pd.Series(setpoint_df['setpoint_neutral'].tolist(), index=setpoint_df['body_part'])
-            setpoint_upper = pd.Series(setpoint_df['setpoint_upper'].tolist(), index=setpoint_df['body_part'])
-            setpoint_lower = pd.Series(setpoint_df['setpoint_lower'].tolist(), index=setpoint_df['body_part'])
-            return setpoint_neutral, setpoint_upper, setpoint_lower
+        setpoint_lower = setpoint.loc[LIMIT_TYPE_DICT['lower']]
+        setpoint_upper = setpoint.loc[LIMIT_TYPE_DICT['upper']]
+        setpoint_neutral = setpoint.loc[LIMIT_TYPE_DICT['neutral']]
+        return setpoint_neutral, setpoint_upper, setpoint_lower
+
+    @property
+    def setpoint(self):
+        """Return a dataframe of skin temperature setpoints for neutral, upper and lower limits."""
+        _setpoint = pd.concat(self.get_setpoint())
+        _setpoint.index = ['setpoint_neutral', 'setpoint_upper', 'setpoint_lower']
+        return _setpoint
 
     def get_local_sensation(self):
-        mean_skin_temperature = self.get_mean_skin_temperature(self.skin_temperature)
+        """
+        Calculate the local sensations for different body parts.
+
+        Returns:
+            A series of local sensations for different body parts.
+        """
         setpoint_neutral, setpoint_upper, setpoint_lower = self.get_setpoint()
+
+        mean_skin_temperature = self.get_mean_skin_temperature(self.skin_temperature)
         mean_setpoint_upper = self.get_mean_skin_temperature(setpoint_upper)
         mean_setpoint_lower = self.get_mean_skin_temperature(setpoint_lower)
 
@@ -120,14 +128,14 @@ class SkinTemperatureProcessor:
             skin_temperature_diff = skin_temperature - setpoint_neutral[body_part]
 
             if skin_temperature_diff >= 0:
-                c1 = coefficient_ucb.loc['C1_warm', body_part]
-                k1 = coefficient_ucb.loc['K1_warm', body_part]
+                c1 = COEFFICIENT.loc['C1_warm', body_part]
+                k1 = COEFFICIENT.loc['K1_warm', body_part]
                 skin_temperature_diff = skin_temperature - setpoint_upper[body_part]
                 skin_temperature_diff = skin_temperature_diff if skin_temperature_diff >= 0 else 0
 
             else:
-                c1 = coefficient_ucb.loc['C1_cool', body_part]
-                k1 = coefficient_ucb.loc['K1_cool', body_part]
+                c1 = COEFFICIENT.loc['C1_cool', body_part]
+                k1 = COEFFICIENT.loc['K1_cool', body_part]
                 skin_temperature_diff = skin_temperature - setpoint_lower[body_part]
                 skin_temperature_diff = skin_temperature_diff if skin_temperature_diff <= 0 else 0
 
@@ -138,9 +146,9 @@ class SkinTemperatureProcessor:
             if self.dynamic:
                 delta_skin_temperature = self.delta_skin_temperature[body_part]
 
-                c21 = coefficient_ucb.loc['C21', body_part]
-                c22 = coefficient_ucb.loc['C22', body_part]
-                c3 = coefficient_ucb.loc['C3', body_part]
+                c21 = COEFFICIENT.loc['C21', body_part]
+                c22 = COEFFICIENT.loc['C22', body_part]
+                c3 = COEFFICIENT.loc['C3', body_part]
 
                 if delta_skin_temperature >= 0:
                     local_sensation_i += c22 * delta_skin_temperature
@@ -148,8 +156,20 @@ class SkinTemperatureProcessor:
                     local_sensation_i += c21 * delta_skin_temperature
                 local_sensation_i += c3 * self.delta_core_temperature
 
-            local_sensation_i = 4 if local_sensation_i > 4 else local_sensation_i
-            local_sensation_i = -4 if local_sensation_i < -4 else local_sensation_i
-            local_sensation[body_part] = local_sensation_i
+            # Set sensation limits
+            local_sensation[body_part] = np.clip(local_sensation_i, -4, 4)
 
         return local_sensation
+
+    @property
+    def local_sensation(self):
+        """Return a series of local sensations for different body parts."""
+        return self.get_local_sensation()
+
+
+if __name__ == '__main__':
+    a = [1.3, 1.2, 1.1, 1.0, 0.8]
+    b = 1.05
+    print([round(abs(i - b), 3) for i in a])
+    m = min(a, key=lambda x: round(abs(x - b), 3))
+    print(m)

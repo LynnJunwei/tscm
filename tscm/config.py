@@ -13,7 +13,7 @@ class LocalSensationConfig:
     def __init__(self, dynamic: bool = True,
                  mean_skin_temperature_approach: Literal[3, 4, 7, 8] = 7,
                  mean_skin_temperature_substitute: Optional[dict[str, str]] = None,
-                 setpoint_type: Literal['setpoint', 'null_zone', 'setpoint_modified'] = 'setpoint'):
+                 setpoint_type: Literal['setpoint', 'null_zone'] = 'setpoint'):
         """
         Args:
             dynamic:
@@ -98,13 +98,13 @@ class HumanConfig:
         met_:
             A float of temporary metabolic rate for each iteration.
     """
-    def __init__(self, met: float | pd.Series = 1.0,
+    def __init__(self, met: float = 1.0,
                  clo: float = 0.5,
                  sex: Literal['male', 'female'] = 'male'):
         """
         Args:
             met:
-                A single float or series of Metabolic rate of human object. Default is 1.0.
+                A single float of Metabolic rate of human object. Default is 1.0.
 
                 If metabolic rate is changing in the calculation, please use a series as input and make sure the index
                 of series is same as that of input skin temperature data.
@@ -114,7 +114,5 @@ class HumanConfig:
                 Sex of human object. The value should be 'male' or 'female'. Default is 'male'.
         """
         self.met = met
-        self.met_ = None
         self.clo = clo
-        self.clo_type = np.where(abs(clo-0.60) <= abs(clo-1.27), 'Summer', 'WinterIndoor')
         self.sex = sex
