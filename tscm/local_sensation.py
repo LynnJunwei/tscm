@@ -14,25 +14,31 @@ from tscm.const import MEAN_TSK_BODY_PARTS, MEAN_TSK_COEFFICIENT
 
 
 class SkinTemperatureProcessor:
-    """Calculate local sensations for different body parts based on their corresponding skin temperature."""
+    """
+    A class for processing local skin temperature data. The class contains three read-only properties:
+
+    - **mean_skin_temperature:** The mean skin temperature of a group of skin temperatures.
+    - **setpoint:** The neutral skin temperature ranges for different body parts.
+    - **local_sensation_sorted:** The local sensations calculated based on skin temperatures and their setpoints.
+    """
     def __init__(self, skin_temperature: pd.Series,
-                 delta_skin_temperature: Optional[pd.Series],
-                 delta_core_temperature: Optional[float],
-                 human_config: HumanConfig,
-                 local_sensation_config: LocalSensationConfig):
+                 delta_skin_temperature: Optional[pd.Series] = None,
+                 delta_core_temperature: Optional[float] = None,
+                 human_config: HumanConfig = HumanConfig(),
+                 local_sensation_config: LocalSensationConfig = LocalSensationConfig()):
         """
         Args:
             skin_temperature: A series of skin temperatures.
             delta_skin_temperature: A series of delta skin temperatures.
             delta_core_temperature: A series of delta core temperatures.
             human_config: Configurations of human. Refer to class HumanConfig.
-            local_sensation_config: Configurations for local sensation calculation. Refer to class LocalSensationConfig.
+            local_sensation_config: Configurations for local local_sensation_sorted calculation. Refer to class LocalSensationConfig.
         """
         self.skin_temperature = skin_temperature
         self.delta_skin_temperature = delta_skin_temperature
         self.delta_core_temperature = delta_core_temperature
 
-        self.body_parts = skin_temperature.index
+        self.body_parts = self.skin_temperature.index
 
         self.mean_skin_temperature_approach = local_sensation_config.mean_skin_temperature_approach
         self.dynamic = local_sensation_config.dynamic
@@ -72,7 +78,7 @@ class SkinTemperatureProcessor:
 
         return (body_parts_coefficient * skin_temperature_for_mean).sum()
 
-    def get_setpoint(self):
+    def get_setpoint(self) -> tuple[pd.Series, pd.Series, pd.Series]:
         """
         Select the skin temperature setpoints (ranges) for different body parts.
 
@@ -94,7 +100,7 @@ class SkinTemperatureProcessor:
         setpoint_neutral = setpoint.loc[LIMIT_TYPE_DICT['neutral']]
         return setpoint_neutral, setpoint_upper, setpoint_lower
 
-    def get_local_sensation(self):
+    def get_local_sensation(self) -> pd.Series:
         """
         Calculate the local sensations for different body parts.
 
@@ -135,7 +141,7 @@ class SkinTemperatureProcessor:
             exponent = -(c1 + k1) * skin_temperature_diff + k1 * mean_skin_temperature_diff
             local_sensation_i = 4 * (2 / (1 + math.exp(exponent)) - 1)
 
-            # dynamic sensation
+            # dynamic local_sensation_sorted
             if self.dynamic:
                 delta_skin_temperature = self.delta_skin_temperature[body_part]
 
@@ -149,26 +155,24 @@ class SkinTemperatureProcessor:
                     local_sensation_i += c21 * delta_skin_temperature
                 local_sensation_i += c3 * self.delta_core_temperature
 
-            # Set sensation limits
+            # Set local_sensation_sorted limits
             local_sensation[body_part] = np.clip(local_sensation_i, -4, 4)
 
         return local_sensation
 
     @property
     def mean_skin_temperature(self) -> float:
-        """Return the mean skin temperature."""
+        """The mean skin temperature."""
         return self.get_mean_skin_temperature(self.skin_temperature)
 
     @property
-    def setpoint(self):
-        """Return a dataframe of skin temperature setpoints for neutral, upper and lower limits."""
-        _setpoint = pd.concat(self.get_setpoint())
-        _setpoint.index = ['setpoint_neutral', 'setpoint_upper', 'setpoint_lower']
-        return _setpoint
+    def setpoint(self) -> pd.DataFrame:
+        """A dataframe of skin temperature setpoints for neutral, upper and lower limits."""
+        return pd.DataFrame(self.get_setpoint(), index=['setpoint_neutral', 'setpoint_upper', 'setpoint_lower'])
 
     @property
-    def local_sensation(self):
-        """Return a series of local sensations for different body parts."""
+    def local_sensation(self) -> pd.Series:
+        """A series of local sensations for different body parts."""
         return self.get_local_sensation()
 
 

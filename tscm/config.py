@@ -9,14 +9,14 @@ import numpy as np
 
 
 class LocalSensationConfig:
-    """Adjust configuration used to calculate local sensation from skin temperature."""
-    def __init__(self, dynamic: bool = True,
+    """Adjust configuration used to calculate local local_sensation_sorted from skin temperature."""
+    def __init__(self, dynamic: bool = False,
                  mean_skin_temperature_approach: Literal[3, 4, 7, 8] = 7,
                  setpoint_type: Literal['setpoint', 'null_zone'] = 'setpoint'):
         """
         Args:
             dynamic:
-                A boolean indicating whether to calculate dynamic sensation. Default is True.
+                A boolean indicating whether to calculate dynamic local_sensation_sorted. Default is True.
 
             mean_skin_temperature_approach:
                 An int represents the approach used to calculate mean skin temperature. Default is 7, which means
@@ -26,7 +26,7 @@ class LocalSensationConfig:
                 only 3-Site (3), 4-Site (4), 7-Site (7), and 8-Site (8) approaches are supported.
 
             setpoint_type:
-                The type of setpoint (skin temperatures in neutral state) used in local sensation calculation.
+                The type of setpoint (skin temperatures in neutral state) used in local local_sensation_sorted calculation.
                 Default is 'setpoint'.
 
                 Three types of setpoint are supported including 'setpoint', 'null_zone', and 'setpoint_modified'.
@@ -50,10 +50,10 @@ class LocalSensationConfig:
 
 class WholeSensationConfig:
     """
-    Adjust configuration used to calculate whole body sensation from local sensation. Currently, all configurations
+    Adjust configuration used to calculate whole body local_sensation_sorted from local local_sensation_sorted. Currently, all configurations
     are related to the smoothing method. The smooth function refers to Zhao, Y., Zhang, H., Arens, E. A., & Zhao, Q.
-    (2014). Thermal sensation and comfort models for non-uniform and transient environments, part IV: Adaptive neutral
-    setpoints and smoothed whole-body sensation model. Building and Environment, 72, 300–308.
+    (2014). Thermal local_sensation_sorted and comfort models for non-uniform and transient environments, part IV: Adaptive neutral
+    setpoints and smoothed whole-body local_sensation_sorted model. Building and Environment, 72, 300–308.
     https://doi.org/10.1016/j.buildenv.2013.11.004
     """
     def __init__(self, smooth: bool = False,

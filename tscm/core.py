@@ -9,19 +9,19 @@ import warnings
 import pandas as pd
 
 from tscm.local_sensation import SkinTemperatureProcessor
-from tscm.whole_sensation import LocalSensationProcessor
+from tscm.whole_sensation_old import LocalSensationProcessor
 from tscm.config import HumanConfig, LocalSensationConfig, WholeSensationConfig
 
 
 class TSCMObject:
     """
-    Object for thermal sensation model.
+    Object for thermal local_sensation_sorted model.
 
     Attributes:
         local_sensation:
-            A dataframe of results of local sensation.
+            A dataframe of results of local local_sensation_sorted.
         whole_sensation:
-            A series of results of whole body sensation.
+            A series of results of whole body local_sensation_sorted.
         model_num:
             A series of model numbers.
     """
@@ -37,16 +37,16 @@ class TSCMObject:
                 A dataframe of measured or simulated skin temperatures with timestamp.
             delta_skin_temperature:
                 A series of derivative of skin temperatures with timestamp.
-                Only needed and used for dynamic local sensation.
+                Only needed and used for dynamic local local_sensation_sorted.
             delta_core_temperature:
                 A series of derivative of core temperatures with timestamp.
-                Only needed and used for dynamic local sensation.
+                Only needed and used for dynamic local local_sensation_sorted.
             human_config:
                 Configuration of human object. Refer to class HumanConfig.
             local_sensation_config:
-                Configuration of local sensation calculation. Refer to class LocalSensationConfig.
+                Configuration of local local_sensation_sorted calculation. Refer to class LocalSensationConfig.
             whole_sensation_config:
-                Configuration of whole sensation calculation. Refer to class WholeSensationConfig.
+                Configuration of whole local_sensation_sorted calculation. Refer to class WholeSensationConfig.
         """
 
         self.human_config = human_config
@@ -63,8 +63,8 @@ class TSCMObject:
 
     def run(self, num_cores: int = 2):
         """
-        Start local and whole-body sensation calculation.
-        Results are saved in attributes local_sensation and whole_sensation.
+        Start local and whole-body local_sensation_sorted calculation.
+        Results are saved in attributes local_sensation_sorted and whole_sensation.
 
         Args:
             num_cores:
@@ -74,7 +74,7 @@ class TSCMObject:
             if self.delta_core_temperature is None or self.delta_skin_temperature is None:
                 self.local_sensation_config.dynamic = False
                 warnings.warn('No input of delta core/skin temperature.'
-                              'Dynamic sensation will not be calculated', RuntimeWarning)
+                              'Dynamic local_sensation_sorted will not be calculated', RuntimeWarning)
 
         self.local_sensation = pd.DataFrame().reindex_like(self.skin_temperature)
         self.whole_sensation = pd.Series(index=self.skin_temperature.index)
@@ -98,7 +98,7 @@ class TSCMObject:
 
     def sub_run(self, i, q):
         """
-        Calculate local and whole-body sensation for each iteration.
+        Calculate local and whole-body local_sensation_sorted for each iteration.
 
         Args:
             i: Index of current iteration.
@@ -107,13 +107,13 @@ class TSCMObject:
              Results are put into queue including:
              i: Index of current iteration.
              local_sensation_: A series of local sensations of current iteration.
-             whole_sensation_: Value of whole-body sensation of current iteration.
+             whole_sensation_: Value of whole-body local_sensation_sorted of current iteration.
              model_num_i: Model number of current iteration.
         """
         if self.local_sensation_config.dynamic:
             delta_skin_temperature_ = self.delta_skin_temperature.loc[i, :]
             delta_core_temperature_ = self.delta_core_temperature.loc[i]
-        else:  # static sensation
+        else:  # static local_sensation_sorted
             delta_skin_temperature_, delta_core_temperature_ = [None] * 2
 
         local_sensation_ = SkinTemperatureProcessor(skin_temperature=self.skin_temperature.loc[i, :],
