@@ -58,6 +58,12 @@ LIMIT_TYPE_DICT = {
     'neutral': 0
 }
 
+COEFFICIENT_INDEX_ABC_DICT = {
+    'd_sensation<=-2': 0,
+    '-2<d_sensation<2': 1,
+    'd_sensation>=2': 2
+}
+
 
 """
 coefficient_ucb: Add "Abdomen" coefficient same as "Pelvis".
@@ -70,36 +76,8 @@ SETPOINT_FILE = DATA_FOLDER_PATH / 'setpoint.csv'
 SETPOINT = pd.read_csv(SETPOINT_FILE, index_col=[0, 1, 2])
 
 COEFFICIENT_FILE = DATA_FOLDER_PATH / 'coefficient.csv'
-COEFFICIENT = pd.read_csv(COEFFICIENT_FILE, index_col=0)
+COEFFICIENT = pd.read_csv(COEFFICIENT_FILE, index_col=[0, 1])
 
 
 if __name__ == '__main__':
-    print(SETPOINT_INDEX_DICT['setpoint'][('Summer', '1.0')])
-
-    import numpy as np
-    import pandas as pd
-
-    a = pd.Series([36]*5, index=['Head', 'Neck', 'Chest', 'Back', 'Pelvis'])
-    for b in MEAN_TSK_BODY_PARTS[7]:
-        n = a[a.index.str.endswith(b)]
-        print(n.isna())
-        if all(n.isna()):
-            raise ValueError('Body part: {} are missing!'.format(b))
-
-    clo = 0.8
-    print(np.where(abs(clo - 0.60) <= abs(clo - 1.27), 'Summer', 'WinterIndoor'))
-
-    met = 1.23
-    clo = 2
-    met_value = np.piecewise(met,
-                             [met < 0.9,
-                              0.9 <= met < 1.05,
-                              1.05 <= met < 1.15,
-                              1.15 <= met < 1.25,
-                              1.25 <= met],
-                             [0.8, 1.0, 1.1, 1.2, 1.3]).item()
-    clo_type = np.where(abs(clo - 0.60) <= abs(clo - 1.27), 'Summer', 'WinterIndoor').item()
-    print()
-    print(SETPOINT_INDEX_DICT['setpoint'][('Summer', '1.0')])
-
-    print(SETPOINT.loc[(0, 1)].loc[LIMIT_TYPE_DICT['lower']])
+    print(COEFFICIENT)

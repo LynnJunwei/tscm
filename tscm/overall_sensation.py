@@ -12,13 +12,13 @@ from tscm.config import WholeSensationConfig
 
 class LocalSensationProcessor:
     """
-    Calculate whole-body local_sensation_sorted for a set of local sensations.
+    Calculate overall local_sensation_sorted for a set of local sensations.
     """
     def __init__(self, local_sensation, whole_sensation_config: WholeSensationConfig):
         """
         Args:
             whole_sensation_config:
-                Configurations for whole-body sensation calculation. Refer to class WholeSensationConfig.
+                Configurations for overall sensation calculation. Refer to class WholeSensationConfig.
         """
         self.local_sensation = local_sensation
 
@@ -302,3 +302,49 @@ class LocalSensationProcessor:
         def opposite_dominated_cold(local_sensation):
             """Return the whole-body sensation calculated by opposite dominated cold model."""
             return min(local_sensation[self.dominant_parts])
+
+        def _opposite_modifier(local_sensation, overall_sensation):
+            """
+            Calculate combined force of opposite sensations as modifier for opposite sensation model.
+
+            Args:
+                local_sensation:
+                overall_sensation: Value of overall sensation of bigger group calculated by no-opposite model.
+
+            Returns:
+                Value of modifier for opposite sensation model.
+            """
+            individual_force = []
+            for body_name, sensation in sensation_series.items():
+                delta_sensation = sensation - overall_sensation
+                if delta_sensation <= -2:
+                    a = coefficients.a_if_delta_sens_local_is_less_than_minus_2[body_name]
+                    b = coefficients.b_if_delta_sens_local_is_less_than_minus_2[body_name]
+                    c = coefficients.c_if_delta_sens_local_is_less_than_minus_2[body_name]
+                elif -2 < delta_sensation < 2:
+                    a = coefficients.a_if_delta_sens_local_is_between_minus_2_to_plus_2[body_name]
+                    b = coefficients.b_if_delta_sens_local_is_between_minus_2_to_plus_2[body_name]
+                    c = coefficients.c_if_delta_sens_local_is_between_minus_2_to_plus_2[body_name]
+                else:  # delta_sensation >= 2
+                    a = coefficients.a_if_delta_sens_local_is_plus_2_or_more[body_name]
+                    b = coefficients.b_if_delta_sens_local_is_plus_2_or_more[body_name]
+                    c = coefficients.c_if_delta_sens_local_is_plus_2_or_more[body_name]
+                individual_force.append(a * (delta_sensation - c) + b)
+
+            individual_force_sorted = sorted(individual_force, key=np.abs, reverse=True)
+            if len(individual_force_sorted) == 0:
+                return 0
+            if len(individual_force_sorted) == 1:
+                combined_force = individual_force_sorted[0]
+            else:
+                combined_force = (
+                        individual_force_sorted[0] + 0.1 * individual_force_sorted[1]
+                )
+
+            most_extreme_sensation_abs = sensation_series.abs().max()
+            if most_extreme_sensation_abs < 1:
+                return 0
+            if 1 <= most_extreme_sensation_abs < 2:
+                return (most_extreme_sensation_abs - 1) * combined_force
+            if most_extreme_sensation_abs >= 2:
+                return combined_force

@@ -127,14 +127,14 @@ class SkinTemperatureProcessor:
             skin_temperature_diff = skin_temperature - setpoint_neutral[body_part]
 
             if skin_temperature_diff >= 0:
-                c1 = COEFFICIENT.loc['C1_warm', body_part]
-                k1 = COEFFICIENT.loc['K1_warm', body_part]
+                c1 = COEFFICIENT.loc[('C1_warm', 0), body_part]
+                k1 = COEFFICIENT.loc[('K1_warm', 0), body_part]
                 skin_temperature_diff = skin_temperature - setpoint_upper[body_part]
                 skin_temperature_diff = skin_temperature_diff if skin_temperature_diff >= 0 else 0
 
             else:
-                c1 = COEFFICIENT.loc['C1_cool', body_part]
-                k1 = COEFFICIENT.loc['K1_cool', body_part]
+                c1 = COEFFICIENT.loc[('C1_cool', 0), body_part]
+                k1 = COEFFICIENT.loc[('K1_cool', 0), body_part]
                 skin_temperature_diff = skin_temperature - setpoint_lower[body_part]
                 skin_temperature_diff = skin_temperature_diff if skin_temperature_diff <= 0 else 0
 
@@ -145,9 +145,9 @@ class SkinTemperatureProcessor:
             if self.dynamic:
                 delta_skin_temperature = self.delta_skin_temperature[body_part]
 
-                c21 = COEFFICIENT.loc['C21', body_part]
-                c22 = COEFFICIENT.loc['C22', body_part]
-                c3 = COEFFICIENT.loc['C3', body_part]
+                c21 = COEFFICIENT.loc[('C21', 0), body_part]
+                c22 = COEFFICIENT.loc[('C22', 0), body_part]
+                c3 = COEFFICIENT.loc[('C3', 0), body_part]
 
                 if delta_skin_temperature >= 0:
                     local_sensation_i += c22 * delta_skin_temperature
