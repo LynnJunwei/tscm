@@ -58,12 +58,6 @@ LIMIT_TYPE_DICT = {
     'neutral': 0
 }
 
-COEFFICIENT_INDEX_ABC_DICT = {
-    'd_sensation<=-2': 0,
-    '-2<d_sensation<2': 1,
-    'd_sensation>=2': 2
-}
-
 
 """
 coefficient_ucb: Add "Abdomen" coefficient same as "Pelvis".
@@ -76,7 +70,7 @@ SETPOINT_FILE = DATA_FOLDER_PATH / 'setpoint.csv'
 SETPOINT = pd.read_csv(SETPOINT_FILE, index_col=[0, 1, 2])
 
 COEFFICIENT_FILE = DATA_FOLDER_PATH / 'coefficient.csv'
-COEFFICIENT = pd.read_csv(COEFFICIENT_FILE, index_col=[0, 1])
+COEFFICIENT = pd.read_csv(COEFFICIENT_FILE, index_col=0)
 
 
 if __name__ == '__main__':
