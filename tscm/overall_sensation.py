@@ -160,13 +160,14 @@ class LocalSensationProcessor:
         Returns:
             The number of whole-body local_sensation_sorted calculation model.
         """
+        if self.bigger_group == "warm" and self.is_cold_dominated:
+            return 5
+
         if not self.are_sensations_no_opposite:
-            if self.bigger_group == "cold":
-                return 7
-            if self.is_cold_dominated:
-                return 5
             if self.bigger_group == "warm":
                 return 6
+            if self.bigger_group == "cold":
+                return 7
 
         if self.are_sensations_no_opposite:
             if self.bigger_group == "warm":
@@ -494,8 +495,6 @@ class LocalSensationProcessor:
                     break  # Stop when sensation meets the condition.
             return np.mean(local_sensation_selected)
 
-
-
         def low_level_cold(local_sensation) -> float:
             """Returns the whole-body sensation calculated by no-opposite low level cold (gradual cold) model."""
             local_sensation_ascending = local_sensation.sort_values(ascending=True)
@@ -560,15 +559,60 @@ class LocalSensationProcessor:
 
             return overall_sensation_bigger_ex + modifier
 
+        def modified_high_level_warm(local_sensation) -> float:
+            sensation = high_level_warm(local_sensation)
+            # sensations larger than 1 and overall sensation are considered for modifier
+            threshold = max([sensation, 1])
+            modifier = _extreme_modifier(local_sensation[local_sensation > threshold], sensation)
+            return sensation + modifier
+
+        def modified_high_level_cold(local_sensation) -> float:
+            sensation = high_level_cold(local_sensation)
+            # Limit sensation by dominant parts
+            sensation = min([min(local_sensation[self.dominant_parts]), sensation])
+            # sensations less than -1 and overall sensation are considered for modifier
+            threshold = min([sensation, -1])
+            modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
+            return sensation + modifier
+
         def modified_low_level_warm(local_sensation) -> float:
             sensation = low_level_warm(local_sensation)
-            modifier = _extreme_modifier(local_sensation[local_sensation > 1], sensation)
+            # sensations larger than 1 and overall sensation are considered for modifier
+            threshold = max([sensation, 1])
+            modifier = _extreme_modifier(local_sensation[local_sensation > threshold], sensation)
             return sensation + modifier
 
         def modified_low_level_cold(local_sensation) -> float:
             sensation = low_level_cold(local_sensation)
-            modifier = _extreme_modifier(local_sensation[local_sensation < -1], sensation)
+            # Limit sensation by dominant parts
+            sensation = min([min(local_sensation[self.dominant_parts]), sensation])
+            # sensations less than -1 and overall sensation are considered for modifier
+            threshold = min([sensation, -1])
+            modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
             return sensation + modifier
+
+        def modified_opposite_dominated_cold(local_sensation) -> float:
+            sensation = opposite_dominated_cold(local_sensation)
+            modifier_warm = _extreme_modifier(local_sensation[local_sensation > 1], sensation)
+            threshold = min([sensation, -1])
+            modifier_cold = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
+            return sensation + modifier_warm + modifier_cold
+
+        def modified_opposite_warm(local_sensation) -> float:
+            sensation = no_opposite_model(local_sensation.where(local_sensation >= -1, -1))
+            modifier_cold = _extreme_modifier(local_sensation[local_sensation < -1], sensation)
+            threshold = max([sensation, 1])
+            modifier_warm = _extreme_modifier(local_sensation[local_sensation > threshold], sensation)
+            return sensation + modifier_warm + modifier_cold
+
+        def modified_opposite_cool(local_sensation) -> float:
+            sensation = no_opposite_model(local_sensation.where(local_sensation <= 1, 1))
+            # Limit sensation by dominant parts
+            sensation = min([min(local_sensation[self.dominant_parts]), sensation])
+            modifier_warm = _extreme_modifier(local_sensation[local_sensation > 1], sensation)
+            threshold = min([sensation, -1])
+            modifier_cold = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
+            return sensation + modifier_warm + modifier_cold
 
         sensation_model_map = {
             1: high_level_warm,
@@ -580,7 +624,17 @@ class LocalSensationProcessor:
             7: opposite_cool
         }
 
-        return {model_num: model(self.local_sensation) for model_num, model in sensation_model_map.items()}
+        modified_sensation_model_map = {
+            1: modified_high_level_warm,
+            2: modified_high_level_cold,
+            3: modified_low_level_warm,
+            4: modified_low_level_cold,
+            5: modified_opposite_dominated_cold,
+            6: modified_opposite_warm,
+            7: modified_opposite_cool
+        }
+
+        return {model_num: model(self.local_sensation) for model_num, model in modified_sensation_model_map.items()}
 
     @property
     def overall_sensations_dict(self) -> dict:
