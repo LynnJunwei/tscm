@@ -6,7 +6,7 @@ from typing import Literal
 import pandas as pd
 
 
-def get_bigger_group(local_sensation) -> Literal["warm", "cold"]:
+def get_bigger_group(local_sensation: pd.Series) -> Literal["warm", "cold"]:
     """
     Determine which sensation group (warm or cold / positive or negative) is bigger group. The group including
     larger number of sensations will be considered as bigger group. If the numbers are the same, bigger group is
@@ -18,7 +18,7 @@ def get_bigger_group(local_sensation) -> Literal["warm", "cold"]:
     return "warm" if sum(local_sensation.gt(0)) >= sum(local_sensation.lt(0)) else "cold"
 
 
-def get_sensation_level(local_sensation, bigger_group) -> Literal["high", "low"]:
+def get_sensation_level(local_sensation: pd.Series, bigger_group: Literal["warm", "cold"]) -> Literal["high", "low"]:
     """
     Determine the level of sensation for input local sensation group.
 

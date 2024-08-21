@@ -32,7 +32,8 @@ class SkinTemperatureProcessor:
             delta_skin_temperature: A series of delta skin temperatures.
             delta_core_temperature: A series of delta core temperatures.
             human_config: Configurations of human. Refer to class HumanConfig.
-            local_sensation_config: Configurations for local local_sensation_sorted calculation. Refer to class LocalSensationConfig.
+            local_sensation_config: Configurations for local local_sensation_sorted calculation.
+                Refer to class LocalSensationConfig.
         """
         self.skin_temperature = skin_temperature
         self.delta_skin_temperature = delta_skin_temperature

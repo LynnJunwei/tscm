@@ -16,11 +16,12 @@ class LocalSensationProcessor:
     Calculate overall local_sensation_sorted for a set of local sensations.
     """
 
-    def __init__(self, local_sensation, whole_sensation_config: WholeSensationConfig):
+    def __init__(self, local_sensation: pd.Series, whole_sensation_config: WholeSensationConfig):
         """
         Args:
-            whole_sensation_config:
-                Configurations for overall sensation calculation. Refer to class WholeSensationConfig.
+            local_sensation: A series of local sensations.
+            whole_sensation_config: Configurations for overall sensation calculation.
+                Refer to class WholeSensationConfig.
         """
         self.local_sensation = local_sensation
 
@@ -32,7 +33,25 @@ class LocalSensationProcessor:
         self.model_type = whole_sensation_config.model_type
         self.dominant_parts = list(whole_sensation_config.dominant_parts)
 
-    def _is_cold_dominated(self) -> bool:
+    @property
+    def bigger_group(self) -> Literal["warm", "cold"]:
+        """Name of bigger group which is either "warm" or "cold"."""
+        return util.get_bigger_group(self.local_sensation)
+
+    @property
+    def are_hands_feet_warmest(self) -> bool:
+        """Whether the warmest sensations are from the hands or feet."""
+        local_sensation_descending = self.local_sensation.sort_values(ascending=False)
+        return util.are_hands_feet_most_extreme(local_sensation_descending)
+
+    @property
+    def are_hands_feet_coldest(self) -> bool:
+        """Whether the coldest sensations are from the hands or feet."""
+        local_sensation_ascending = self.local_sensation.sort_values(ascending=True)
+        return util.are_hands_feet_most_extreme(local_sensation_ascending)
+
+    @property
+    def is_cold_dominated(self) -> bool:
         """
         Determine if the cool or cold sensation has potential to dominate overall sensation.
 
@@ -49,7 +68,8 @@ class LocalSensationProcessor:
         """
         return True if min(self.local_sensation[self.dominant_parts]) <= -1 else False
 
-    def _are_sensations_no_opposite(self) -> bool:
+    @property
+    def are_sensations_no_opposite(self) -> bool:
         """
         Determine if the input local sensation group does not contain opposite sensations.
 
@@ -69,7 +89,8 @@ class LocalSensationProcessor:
         if self.bigger_group == "cold":
             return True if max(self.local_sensation) <= 1 else False
 
-    def _get_sensation_model_num(self) -> Literal[1, 2, 3, 4, 5, 6, 7]:
+    @property
+    def model_num(self) -> Literal[1, 2, 3, 4, 5, 6, 7]:
         """
         Determine the index number of sensation model for input sensations.
 
@@ -108,38 +129,6 @@ class LocalSensationProcessor:
                     return 2
                 if sensation_level == "low":
                     return 4
-
-    @property
-    def bigger_group(self) -> Literal["warm", "cold"]:
-        """Name of bigger group which is either "warm" or "cold"."""
-        return util.get_bigger_group(self.local_sensation)
-
-    @property
-    def are_hands_feet_warmest(self) -> bool:
-        """Whether the warmest sensations are from the hands or feet."""
-        local_sensation_descending = self.local_sensation.sort_values(ascending=False)
-        return util.are_hands_feet_most_extreme(local_sensation_descending)
-
-    @property
-    def are_hands_feet_coldest(self) -> bool:
-        """Whether the coldest sensations are from the hands or feet."""
-        local_sensation_ascending = self.local_sensation.sort_values(ascending=True)
-        return util.are_hands_feet_most_extreme(local_sensation_ascending)
-
-    @property
-    def is_cold_dominated(self) -> bool:
-        """Whether the cool or cold sensation has potential to dominate overall sensation."""
-        return self._is_cold_dominated()
-
-    @property
-    def are_sensations_no_opposite(self) -> bool:
-        """Whether the input local sensation group does not contain opposite sensations."""
-        return self._are_sensations_no_opposite()
-
-    @property
-    def model_num(self) -> Literal[1, 2, 3, 4, 5, 6, 7]:
-        """The number of whole-body sensation calculation model."""
-        return self._get_sensation_model_num()
 
     def _get_sensation_models(self) -> dict:
         def high_level_warm(local_sensation) -> float:
