@@ -9,8 +9,8 @@ import warnings
 import pandas as pd
 
 from tscm.local_sensation import SkinTemperatureProcessor
-from tscm.whole_sensation_old import LocalSensationProcessor
-from tscm.config import HumanConfig, LocalSensationConfig, WholeSensationConfig
+from tscm.overall_sensation import LocalSensationProcessor
+from tscm.config import HumanConfig, LocalSensationConfig, OverallSensationConfig
 
 
 class TSCMObject:
@@ -20,8 +20,8 @@ class TSCMObject:
     Attributes:
         local_sensation:
             A dataframe of results of local local_sensation_sorted.
-        whole_sensation:
-            A series of results of whole body local_sensation_sorted.
+        overall_sensation:
+            A series of results of overall local_sensation_sorted.
         model_num:
             A series of model numbers.
     """
@@ -30,7 +30,7 @@ class TSCMObject:
                  delta_core_temperature: Optional[pd.Series] = None,
                  human_config: HumanConfig = HumanConfig(),
                  local_sensation_config: LocalSensationConfig = LocalSensationConfig(),
-                 whole_sensation_config: WholeSensationConfig = WholeSensationConfig()):
+                 overall_sensation_config: OverallSensationConfig = OverallSensationConfig()):
         """
         Args:
             skin_temperature:
@@ -44,27 +44,27 @@ class TSCMObject:
             human_config:
                 Configuration of human object. Refer to class HumanConfig.
             local_sensation_config:
-                Configuration of local local_sensation_sorted calculation. Refer to class LocalSensationConfig.
-            whole_sensation_config:
-                Configuration of whole local_sensation_sorted calculation. Refer to class WholeSensationConfig.
+                Configuration of local sensation calculation. Refer to class LocalSensationConfig.
+            overall_sensation_config:
+                Configuration of overall sensation calculation. Refer to class OverallSensationConfig.
         """
 
         self.human_config = human_config
         self.local_sensation_config = local_sensation_config
-        self.whole_sensation_config = whole_sensation_config
+        self.overall_sensation_config = overall_sensation_config
 
         self.skin_temperature = skin_temperature
         self.delta_skin_temperature = delta_skin_temperature
         self.delta_core_temperature = delta_core_temperature
 
         self.local_sensation = None
-        self.whole_sensation = None
+        self.overall_sensation = None
         self.model_num = None
 
     def run(self, num_cores: int = 2):
         """
-        Start local and whole-body local_sensation_sorted calculation.
-        Results are saved in attributes local_sensation_sorted and whole_sensation.
+        Start local and overall sensation calculation.
+        Results are saved in attributes local_sensation_sorted and overall_sensation.
 
         Args:
             num_cores:
@@ -77,7 +77,7 @@ class TSCMObject:
                               'Dynamic local_sensation_sorted will not be calculated', RuntimeWarning)
 
         self.local_sensation = pd.DataFrame().reindex_like(self.skin_temperature)
-        self.whole_sensation = pd.Series(index=self.skin_temperature.index)
+        self.overall_sensation = pd.Series(index=self.skin_temperature.index)
         self.model_num = pd.Series(index=self.skin_temperature.index)
 
         pool = mp.Pool(num_cores)
@@ -91,14 +91,14 @@ class TSCMObject:
         pool.close()
         pool.join()
         for _ in self.skin_temperature.index:
-            i, local_sensation_i, whole_sensation_i, model_num_i = q.get()
+            i, local_sensation_i, overall_sensation_i, model_num_i = q.get()
             self.local_sensation.loc[i, :] = local_sensation_i
-            self.whole_sensation.loc[i] = whole_sensation_i
+            self.overall_sensation.loc[i] = overall_sensation_i
             self.model_num.loc[i] = model_num_i
 
     def sub_run(self, i, q):
         """
-        Calculate local and whole-body local_sensation_sorted for each iteration.
+        Calculate local and overall sensation for each iteration.
 
         Args:
             i: Index of current iteration.
@@ -107,7 +107,7 @@ class TSCMObject:
              Results are put into queue including:
              i: Index of current iteration.
              local_sensation_: A series of local sensations of current iteration.
-             whole_sensation_: Value of whole-body local_sensation_sorted of current iteration.
+             overall_sensation_: Value of overall sensation of current iteration.
              model_num_i: Model number of current iteration.
         """
         if self.local_sensation_config.dynamic:
@@ -123,9 +123,9 @@ class TSCMObject:
                                                     local_sensation_config=self.local_sensation_config
                                                     ).get_local_sensation()
 
-        whole_sensation_model = LocalSensationProcessor(local_sensation=local_sensation_,
-                                                        whole_sensation_config=self.whole_sensation_config)
-        model_num_i = whole_sensation_model.model_num
-        whole_sensation_ = whole_sensation_model.get_whole_sensation()
+        overall_sensation_model = LocalSensationProcessor(local_sensation=local_sensation_,
+                                                          overall_sensation_config=self.overall_sensation_config)
+        model_num_i = overall_sensation_model.model_num
+        overall_sensation_ = overall_sensation_model.overall_sensation
 
-        q.put((i, local_sensation_, whole_sensation_, model_num_i))
+        q.put((i, local_sensation_, overall_sensation_, model_num_i))

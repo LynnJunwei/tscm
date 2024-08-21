@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 from tscm.const import COEFFICIENT
-from tscm.config import WholeSensationConfig
+from tscm.config import OverallSensationConfig
 
 
 class SensationModel:
@@ -390,11 +390,11 @@ class LocalSensationProcessor(SensationModel):
     Attributes:
         model_num: The number of whole-body local_sensation_sorted calculation model. Refer to function get_model_num.
     """
-    def __init__(self, local_sensation, whole_sensation_config: WholeSensationConfig):
+    def __init__(self, local_sensation, whole_sensation_config: OverallSensationConfig):
         """
         Args:
             whole_sensation_config:
-                Configurations for whole-body local_sensation_sorted calculation. Refer to class WholeSensationConfig.
+                Configurations for whole-body local_sensation_sorted calculation. Refer to class OverallSensationConfig.
         """
         self.whole_sensation_config = whole_sensation_config
         SensationModel.dominant_parts = self.whole_sensation_config.dominant_parts

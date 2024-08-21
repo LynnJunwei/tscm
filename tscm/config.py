@@ -49,13 +49,13 @@ class LocalSensationConfig:
         self.setpoint_type = setpoint_type
 
 
-class WholeSensationConfig:
+class OverallSensationConfig:
     """
-    Adjust configuration used to calculate whole body local_sensation_sorted from local local_sensation_sorted. Currently, all configurations
+    Adjust configuration used to calculate overall sensation from local sensation. Currently, all configurations
     are related to the smoothing method. The smooth function refers to Zhao, Y., Zhang, H., Arens, E. A., & Zhao, Q.
-    (2014). Thermal local_sensation_sorted and comfort models for non-uniform and transient environments, part IV: Adaptive neutral
-    setpoints and smoothed whole-body local_sensation_sorted model. Building and Environment, 72, 300–308.
-    https://doi.org/10.1016/j.buildenv.2013.11.004
+    (2014). Thermal local_sensation_sorted and comfort models for non-uniform and transient environments, part IV:
+    Adaptive neutral setpoints and smoothed whole-body local_sensation_sorted model. Building and Environment,
+    72, 300–308. https://doi.org/10.1016/j.buildenv.2013.11.004
     """
     def __init__(self,
                  smooth: bool = False,
@@ -75,13 +75,13 @@ class WholeSensationConfig:
             dominant_parts:
                 A list of names of dominant body parts used in calculation. Default includes Chest, Back and Pelvis.
             model_type:
-                The type of whole body local_sensation_sorted model. Default is 'origin'.
+                The type of overall sensation model. Default is 'origin'.
 
                 - **'origin':**
-                  The original whole body local_sensation_sorted model.
+                  The original overall sensation model.
 
                 - **'modified':**
-                  The modified whole body local_sensation_sorted model with the smoothing method.
+                  The modified overall sensation model with the smoothing method.
         """
         self.smooth_alpha = smooth_alpha
         self.smooth = smooth

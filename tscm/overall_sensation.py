@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 from tscm.const import COEFFICIENT
-from tscm.config import WholeSensationConfig
+from tscm.config import OverallSensationConfig
 import tscm.utility as util
 
 
@@ -16,22 +16,22 @@ class LocalSensationProcessor:
     Calculate overall local_sensation_sorted for a set of local sensations.
     """
 
-    def __init__(self, local_sensation: pd.Series, whole_sensation_config: WholeSensationConfig):
+    def __init__(self, local_sensation: pd.Series, overall_sensation_config: OverallSensationConfig):
         """
         Args:
             local_sensation: A series of local sensations.
-            whole_sensation_config: Configurations for overall sensation calculation.
-                Refer to class WholeSensationConfig.
+            overall_sensation_config: Configurations for overall sensation calculation.
+                Refer to class OverallSensationConfig.
         """
         self.local_sensation = local_sensation
 
         self.body_parts = self.local_sensation.index
 
-        self.smooth_alpha = whole_sensation_config.smooth_alpha
-        self.smooth = whole_sensation_config.smooth
-        self.smooth_adjusted = whole_sensation_config.smooth_adjusted
-        self.model_type = whole_sensation_config.model_type
-        self.dominant_parts = list(whole_sensation_config.dominant_parts)
+        self.smooth_alpha = overall_sensation_config.smooth_alpha
+        self.smooth = overall_sensation_config.smooth
+        self.smooth_adjusted = overall_sensation_config.smooth_adjusted
+        self.model_type = overall_sensation_config.model_type
+        self.dominant_parts = list(overall_sensation_config.dominant_parts)
 
     @property
     def bigger_group(self) -> Literal["warm", "cold"]:
@@ -104,7 +104,7 @@ class LocalSensationProcessor:
             7. Opposite cool
 
         Returns:
-            The number of whole-body local_sensation_sorted calculation model.
+            The number of overall sensation calculation model.
         """
         if self.bigger_group == "warm" and self.is_cold_dominated:
             return 5
@@ -132,7 +132,7 @@ class LocalSensationProcessor:
 
     def _get_sensation_models(self) -> dict:
         def high_level_warm(local_sensation) -> float:
-            """Returns the whole-body sensation calculated by no-opposite high level warm (complaint warm) model."""
+            """Returns the overall sensation calculated by no-opposite high level warm (complaint warm) model."""
             local_sensation_descending = local_sensation.sort_values(ascending=False)
             if util.are_hands_feet_most_extreme(local_sensation_descending):
                 return 0.5 * local_sensation_descending.iloc[0] + 0.5 * local_sensation_descending.iloc[2]
@@ -140,7 +140,7 @@ class LocalSensationProcessor:
                 return 0.5 * local_sensation_descending.iloc[0] + 0.5 * local_sensation_descending.iloc[1]
 
         def high_level_cold(local_sensation) -> float:
-            """Returns the whole-body sensation calculated by no-opposite high level cold (complaint cold) model."""
+            """Returns the overall sensation calculated by no-opposite high level cold (complaint cold) model."""
             local_sensation_ascending = local_sensation.sort_values(ascending=True)
             if util.are_hands_feet_most_extreme(local_sensation_ascending):
                 return 0.38 * local_sensation_ascending.iloc[0] + 0.62 * local_sensation_ascending.iloc[2]
@@ -163,7 +163,7 @@ class LocalSensationProcessor:
             return 2 / body_parts_num
 
         def low_level_warm(local_sensation) -> float:
-            """Returns the whole-body sensation calculated by no-opposite low level warm (gradual warm) model."""
+            """Returns the overall sensation calculated by no-opposite low level warm (gradual warm) model."""
             local_sensation_descending = local_sensation.sort_values(ascending=False)
             interval = _get_interval(local_sensation_descending)
 
@@ -178,7 +178,7 @@ class LocalSensationProcessor:
             return np.mean(local_sensation_selected)
 
         def low_level_cold(local_sensation) -> float:
-            """Returns the whole-body sensation calculated by no-opposite low level cold (gradual cold) model."""
+            """Returns the overall sensation calculated by no-opposite low level cold (gradual cold) model."""
             local_sensation_ascending = local_sensation.sort_values(ascending=True)
             interval = _get_interval(local_sensation_ascending)
 
@@ -193,7 +193,7 @@ class LocalSensationProcessor:
             return np.mean(local_sensation_selected)
 
         def no_opposite_model(local_sensation, bigger_group):
-            """Return the whole-body sensation calculated by no-opposite model."""
+            """Return the overall sensation calculated by no-opposite model."""
             body_parts_num = len(local_sensation)
             # If no sensation in input series, return 0.
             if body_parts_num == 0:
@@ -212,7 +212,7 @@ class LocalSensationProcessor:
                 return low_level_warm(local_sensation) if bigger_group == "warm" else low_level_cold(local_sensation)
 
         def opposite_dominated_cold(local_sensation):
-            """Return the whole-body sensation calculated by opposite dominated cold model."""
+            """Return the overall sensation calculated by opposite dominated cold model."""
             return min(local_sensation[self.dominant_parts])
 
         def _opposite_modifier(local_sensation, overall_sensation):
@@ -272,7 +272,7 @@ class LocalSensationProcessor:
             return combined_force * correction_factor
 
         def opposite_warm(local_sensation):
-            """Return the whole-body sensation calculated by opposite warm model."""
+            """Return the overall sensation calculated by opposite warm model."""
             overall_sensation_bigger = no_opposite_model(local_sensation[local_sensation >= 0], "warm")
             overall_sensation_bigger_ex = no_opposite_model(local_sensation[local_sensation >= -1], "warm")
             modifier = _opposite_modifier(local_sensation[local_sensation < 0], overall_sensation_bigger)
@@ -280,7 +280,7 @@ class LocalSensationProcessor:
             return overall_sensation_bigger_ex + modifier
 
         def opposite_cool(local_sensation):
-            """Return the whole-body sensation calculated by opposite cool model."""
+            """Return the overall sensation calculated by opposite cool model."""
             overall_sensation_bigger = no_opposite_model(local_sensation[local_sensation <= 0], "cold")
             overall_sensation_bigger_ex = no_opposite_model(local_sensation[local_sensation <= 1], "cold")
             modifier = _opposite_modifier(local_sensation[local_sensation > 0], overall_sensation_bigger)
@@ -365,7 +365,7 @@ class LocalSensationProcessor:
             return combined_force * correction_factor
 
         def modified_no_opposite_model(local_sensation, bigger_group):
-            """Return the whole-body sensation calculated by no-opposite model."""
+            """Return the overall sensation calculated by no-opposite model."""
             sensation_level = util.get_sensation_level(local_sensation, bigger_group)
             if sensation_level == "high":
                 return high_level_warm(local_sensation) if bigger_group == "warm" else high_level_cold(local_sensation)
@@ -443,7 +443,7 @@ class LocalSensationProcessor:
 
     @property
     def overall_sensations_dict(self) -> dict:
-        """A series of overall sensations for different whole-body sensation models."""
+        """A series of overall sensations for different overall sensation models."""
         if self.model_type == "origin":
             return {model_num: model(self.local_sensation)
                     for model_num, model in self._get_sensation_models().items()}
