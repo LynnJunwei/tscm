@@ -12,6 +12,9 @@ BODY_NAMES = [
     "LThigh", "LLeg", "LFoot",
     "RThigh", "RLeg", "RFoot"]
 
+DOMINANT_BODY_PARTS = ["Chest", "Back", "Pelvis"]
+"""A list of names of dominant body parts used in calculation."""
+
 MEAN_TSK_BODY_PARTS = {
     3: ["Chest", "Leg", "LowerArm"],
     4: ["Chest", "Arm", "Thigh", "Leg"],

@@ -61,7 +61,6 @@ class OverallSensationConfig:
                  smooth: bool = False,
                  smooth_alpha: int = 5,
                  smooth_adjusted: bool = True,
-                 dominant_parts: list[str] = ('Chest', 'Back', 'Pelvis'),
                  model_type: Literal['origin', 'modified'] = 'origin'):
         """
         Args:
@@ -72,8 +71,6 @@ class OverallSensationConfig:
             smooth_adjusted:
                 A boolean to control whether to use the adjusted smoothing method. After adjusting, the fluctuation
                 happens in critical state could be fixed. Only work when smooth is set to True. Default is True.
-            dominant_parts:
-                A list of names of dominant body parts used in calculation. Default includes Chest, Back and Pelvis.
             model_type:
                 The type of overall sensation model. Default is 'origin'.
 
@@ -86,7 +83,6 @@ class OverallSensationConfig:
         self.smooth_alpha = smooth_alpha
         self.smooth = smooth
         self.smooth_adjusted = smooth_adjusted
-        self.dominant_parts = dominant_parts
         self.model_type = model_type
 
 

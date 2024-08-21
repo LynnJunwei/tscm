@@ -3,6 +3,7 @@
 # @Author  : Eric
 
 from typing import Literal
+from types import FunctionType
 import pandas as pd
 
 
@@ -43,7 +44,7 @@ def get_sensation_level(local_sensation: pd.Series, bigger_group: Literal["warm"
 
 def are_hands_feet_most_extreme(local_sensation_sorted: pd.Series) -> bool:
     """
-    Determine if the most extreme sensations in a given sorted series are from the hands or feet.
+    Determine if the most extreme sensations in a given sorted sensation series are from the hands or feet.
 
     This function examines the input series of sensations to determine if the most extreme sensations
     come from the hands or feet. The input series should be sorted in advanced.
@@ -64,4 +65,12 @@ def are_hands_feet_most_extreme(local_sensation_sorted: pd.Series) -> bool:
     are_hands_most_extreme = body_parts_sorted[0].endswith("Hand") and body_parts_sorted[1].endswith("Hand")
     are_feet_most_extreme = body_parts_sorted[0].endswith("Foot") and body_parts_sorted[1].endswith("Foot")
     return are_hands_most_extreme or are_feet_most_extreme
+
+
+
+def staticclass(cls):
+    for func_name, func in cls.__dict__.items():
+        if isinstance(func, FunctionType):
+            setattr(cls, func_name, staticmethod(func))
+    return cls
 

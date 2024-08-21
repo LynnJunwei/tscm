@@ -6,7 +6,7 @@ from typing import Literal
 import pandas as pd
 import numpy as np
 
-from tscm.const import COEFFICIENT
+from tscm.const import COEFFICIENT, DOMINANT_BODY_PARTS
 from tscm.config import OverallSensationConfig
 import tscm.utility as util
 
@@ -31,7 +31,6 @@ class LocalSensationProcessor:
         self.smooth = overall_sensation_config.smooth
         self.smooth_adjusted = overall_sensation_config.smooth_adjusted
         self.model_type = overall_sensation_config.model_type
-        self.dominant_parts = list(overall_sensation_config.dominant_parts)
 
     @property
     def bigger_group(self) -> Literal["warm", "cold"]:
@@ -66,7 +65,7 @@ class LocalSensationProcessor:
             Return True if the cool or cold sensation has potential to dominate overall sensation.
             Otherwise, return False.
         """
-        return True if min(self.local_sensation[self.dominant_parts]) <= -1 else False
+        return True if min(self.local_sensation[DOMINANT_BODY_PARTS]) <= -1 else False
 
     @property
     def are_sensations_no_opposite(self) -> bool:
@@ -213,7 +212,7 @@ class LocalSensationProcessor:
 
         def opposite_dominated_cold(local_sensation):
             """Return the overall sensation calculated by opposite dominated cold model."""
-            return min(local_sensation[self.dominant_parts])
+            return min(local_sensation[DOMINANT_BODY_PARTS])
 
         def _opposite_modifier(local_sensation, overall_sensation):
             """
@@ -382,7 +381,7 @@ class LocalSensationProcessor:
         def modified_high_level_cold(local_sensation) -> float:
             sensation = high_level_cold(local_sensation)
             # Limit sensation by dominant parts
-            sensation = min([min(local_sensation[self.dominant_parts]), sensation])
+            sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
             # sensations less than -1 and overall sensation are considered for modifier
             threshold = min([sensation, -1])
             modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
@@ -398,7 +397,7 @@ class LocalSensationProcessor:
         def modified_low_level_cold(local_sensation) -> float:
             sensation = low_level_cold(local_sensation)
             # Limit sensation by dominant parts
-            sensation = min([min(local_sensation[self.dominant_parts]), sensation])
+            sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
             # sensations less than -1 and overall sensation are considered for modifier
             threshold = min([sensation, -1])
             modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
@@ -423,7 +422,7 @@ class LocalSensationProcessor:
             sensation = modified_no_opposite_model(local_sensation.where(local_sensation <= 1, 1), 'cold')
             # sensation = no_opposite_model(local_sensation)
             # Limit sensation by dominant parts
-            sensation = min([min(local_sensation[self.dominant_parts]), sensation])
+            sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
             modifier_warm = _extreme_modifier(local_sensation[local_sensation > 0], 0)
             threshold = min([sensation, 0])
             modifier_cold = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
@@ -457,7 +456,7 @@ class LocalSensationProcessor:
 
         def sig(x, a, t): return 1 / (1 + np.exp(-a * (x - t)))
 
-        x1 = min(self.local_sensation[self.dominant_parts])
+        x1 = min(self.local_sensation[DOMINANT_BODY_PARTS])
         x2 = self.local_sensation.sort_values(ascending=False).iloc[0]
         x3 = self.local_sensation.sort_values(ascending=True).iloc[0]
         x4 = self.local_sensation.sort_values(ascending=False).iloc[1 if not self.are_hands_feet_warmest else 2]
