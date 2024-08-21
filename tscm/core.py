@@ -8,8 +8,8 @@ import warnings
 
 import pandas as pd
 
-from tscm.local_sensation import SkinTemperatureProcessor
-from tscm.overall_sensation import LocalSensationProcessor
+from tscm.local_sensation import LocalSensationCalculator
+from tscm.overall_sensation import OverallSensationCalculator
 from tscm.config import HumanConfig, LocalSensationConfig, OverallSensationConfig
 
 
@@ -116,15 +116,15 @@ class TSCMObject:
         else:  # static local_sensation_sorted
             delta_skin_temperature_, delta_core_temperature_ = [None] * 2
 
-        local_sensation_ = SkinTemperatureProcessor(skin_temperature=self.skin_temperature.loc[i, :],
+        local_sensation_ = LocalSensationCalculator(skin_temperature=self.skin_temperature.loc[i, :],
                                                     delta_skin_temperature=delta_skin_temperature_,
                                                     delta_core_temperature=delta_core_temperature_,
                                                     human_config=self.human_config,
                                                     local_sensation_config=self.local_sensation_config
                                                     ).get_local_sensation()
 
-        overall_sensation_model = LocalSensationProcessor(local_sensation=local_sensation_,
-                                                          overall_sensation_config=self.overall_sensation_config)
+        overall_sensation_model = OverallSensationCalculator(local_sensation=local_sensation_,
+                                                             overall_sensation_config=self.overall_sensation_config)
         model_num_i = overall_sensation_model.model_num
         overall_sensation_ = overall_sensation_model.overall_sensation
 

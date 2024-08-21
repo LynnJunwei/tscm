@@ -11,7 +11,7 @@ from tscm.config import OverallSensationConfig
 import tscm.utility as util
 
 
-class LocalSensationProcessor:
+class OverallSensationCalculator:
     """
     Calculate overall local_sensation_sorted for a set of local sensations.
     """

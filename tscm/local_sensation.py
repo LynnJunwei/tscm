@@ -13,7 +13,7 @@ from tscm.config import HumanConfig, LocalSensationConfig
 from tscm.const import MEAN_TSK_BODY_PARTS, MEAN_TSK_COEFFICIENT
 
 
-class SkinTemperatureProcessor:
+class LocalSensationCalculator:
     """
     A class for processing local skin temperature data. The class contains three read-only properties:
 
