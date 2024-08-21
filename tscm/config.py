@@ -10,7 +10,8 @@ import numpy as np
 
 class LocalSensationConfig:
     """Adjust configuration used to calculate local local_sensation_sorted from skin temperature."""
-    def __init__(self, dynamic: bool = False,
+    def __init__(self,
+                 dynamic: bool = False,
                  mean_skin_temperature_approach: Literal[3, 4, 7, 8] = 7,
                  setpoint_type: Literal['setpoint', 'null_zone'] = 'setpoint'):
         """
@@ -56,10 +57,12 @@ class WholeSensationConfig:
     setpoints and smoothed whole-body local_sensation_sorted model. Building and Environment, 72, 300–308.
     https://doi.org/10.1016/j.buildenv.2013.11.004
     """
-    def __init__(self, smooth: bool = False,
+    def __init__(self,
+                 smooth: bool = False,
                  smooth_alpha: int = 5,
                  smooth_adjusted: bool = True,
-                 dominant_parts: list[str] = ('Chest', 'Back', 'Pelvis')):
+                 dominant_parts: list[str] = ('Chest', 'Back', 'Pelvis'),
+                 model_type: Literal['origin', 'modified'] = 'origin'):
         """
         Args:
             smooth:
@@ -71,16 +74,26 @@ class WholeSensationConfig:
                 happens in critical state could be fixed. Only work when smooth is set to True. Default is True.
             dominant_parts:
                 A list of names of dominant body parts used in calculation. Default includes Chest, Back and Pelvis.
+            model_type:
+                The type of whole body local_sensation_sorted model. Default is 'origin'.
+
+                - **'origin':**
+                  The original whole body local_sensation_sorted model.
+
+                - **'modified':**
+                  The modified whole body local_sensation_sorted model with the smoothing method.
         """
         self.smooth_alpha = smooth_alpha
         self.smooth = smooth
         self.smooth_adjusted = smooth_adjusted
         self.dominant_parts = dominant_parts
+        self.model_type = model_type
 
 
 class HumanConfig:
     """Adjust physiological features of human object."""
-    def __init__(self, met: float = 1.0,
+    def __init__(self,
+                 met: float = 1.0,
                  clo: float = 0.5,
                  sex: Literal['male', 'female'] = 'male'):
         """
