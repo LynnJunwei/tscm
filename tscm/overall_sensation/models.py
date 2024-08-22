@@ -85,6 +85,10 @@ def _extreme_modifier(local_sensation, baseline_sensation):
     return combined_force * correction_factor
 
 
+def sig(x, a, t):
+    return 1 / (1 + np.exp(-a * (x - t)))
+
+
 # ------------------------------Original Sensation Model-----------------------------------------------
 
 def high_level_warm(local_sensation) -> float:
@@ -244,3 +248,39 @@ def modified_opposite_cool(local_sensation) -> float:
     threshold = min([sensation, 0])
     modifier_cold = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
     return sensation + modifier_warm + modifier_cold
+
+
+# ------------------------------Internally Smoothed Sensation Model-----------------------------------------------
+
+def smoothed_low_level_warm(local_sensation) -> float:
+    """Returns the overall sensation calculated by internally smoothed low level warm model."""
+    local_sensation_descending = local_sensation.sort_values(ascending=False)
+    interval = _get_interval(local_sensation_descending)
+
+    if util.are_hands_feet_most_extreme(local_sensation_descending):
+        local_sensation_descending = local_sensation_descending.drop(local_sensation_descending.index[1])
+
+    opposite_gamma = []
+    opposite_beta = []
+    beta_x = []
+    alpha = 10
+    # beta_i = gamma_i * (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
+    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    for i in range(2, len(local_sensation_descending)):
+        x_i = local_sensation_descending.iloc[i]
+        x_i_sum = np.mean(local_sensation_descending.iloc[:i + 1])
+
+        if i != len(local_sensation_descending) - 1:
+            gamma_i = sig(x_i, alpha, 2 - interval * (i - 1))
+            beta_i = gamma_i * np.prod(opposite_gamma)  # np.prod([]) = 1
+            beta_x_i = x_i_sum * beta_i
+
+            opposite_gamma.append(1 - gamma_i)
+            opposite_beta.append(1 - beta_i)
+
+        else:
+            beta_i = 1 - np.prod(opposite_beta)
+            beta_x_i = x_i_sum * beta_i
+
+        beta_x.append(beta_x_i)
+    return np.sum(beta_x)
