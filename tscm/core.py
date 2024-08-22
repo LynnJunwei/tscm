@@ -64,7 +64,7 @@ class TSCMObject:
     def run(self, num_cores: int = 2):
         """
         Start local and overall sensation calculation.
-        Results are saved in attributes local_sensation_sorted and overall_sensation.
+        Results are saved in attributes local_sensation_sorted and baseline_sensation.
 
         Args:
             num_cores:
