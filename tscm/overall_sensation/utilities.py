@@ -66,11 +66,3 @@ def are_hands_feet_most_extreme(local_sensation_sorted: pd.Series) -> bool:
     are_feet_most_extreme = body_parts_sorted[0].endswith("Foot") and body_parts_sorted[1].endswith("Foot")
     return are_hands_most_extreme or are_feet_most_extreme
 
-
-
-def staticclass(cls):
-    for func_name, func in cls.__dict__.items():
-        if isinstance(func, FunctionType):
-            setattr(cls, func_name, staticmethod(func))
-    return cls
-
