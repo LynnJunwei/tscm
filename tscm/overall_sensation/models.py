@@ -498,3 +498,52 @@ def smoothed_opposite_cold(local_sensation):
     modifier = _extreme_modifier(local_sensation[local_sensation > 0], overall_sensation_bigger)
 
     return overall_sensation_bigger_ex + modifier
+
+
+# ------------------------------Internally Smoothed and Modified Sensation Model------------------------------------
+
+def smoothed_modified_low_level_warm(local_sensation) -> float:
+    sensation = smoothed_low_level_warm(local_sensation)
+    # sensations larger than 1 and overall sensation are considered for modifier
+    threshold = max([sensation, 1])
+    modifier = _extreme_modifier(local_sensation[local_sensation > threshold], sensation)
+    return sensation + modifier
+
+
+def smoothed_modified_low_level_cold(local_sensation) -> float:
+    sensation = smoothed_low_level_cold(local_sensation)
+    # Limit sensation by dominant parts
+    sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
+    # sensations less than -1 and overall sensation are considered for modifier
+    threshold = min([sensation, -1])
+    modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
+    return sensation + modifier
+
+
+def smoothed_modified_no_opposite_model(local_sensation, bigger_group):
+    """Return the overall sensation calculated by no-opposite model."""
+    sensation_level = util.get_sensation_level(local_sensation, bigger_group)
+    if sensation_level == "high":
+        return high_level_warm(local_sensation) if bigger_group == "warm" else high_level_cold(local_sensation)
+    if sensation_level == "low":
+        return smoothed_low_level_warm(local_sensation) if bigger_group == "warm" else smoothed_low_level_cold(local_sensation)
+
+
+def smoothed_modified_opposite_warm(local_sensation) -> float:
+    sensation = smoothed_modified_no_opposite_model(local_sensation.where(local_sensation >= -1, -1), 'warm')
+    # sensation = no_opposite_model(local_sensation)
+    modifier_cold = _extreme_modifier(local_sensation[local_sensation < 0], 0)
+    threshold = max([sensation, 0])
+    modifier_warm = _extreme_modifier(local_sensation[local_sensation > threshold], sensation)
+    return sensation + modifier_warm + modifier_cold
+
+
+def smoothed_modified_opposite_cold(local_sensation) -> float:
+    sensation = smoothed_modified_no_opposite_model(local_sensation.where(local_sensation <= 1, 1), 'cold')
+    # sensation = no_opposite_model(local_sensation)
+    # Limit sensation by dominant parts
+    sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
+    modifier_warm = _extreme_modifier(local_sensation[local_sensation > 0], 0)
+    threshold = min([sensation, 0])
+    modifier_cold = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
+    return sensation + modifier_warm + modifier_cold

@@ -159,15 +159,26 @@ class OverallSensationCalculator:
                 }
 
         if self.model_type == "modified":
-            sensation_model = {
-                1: models.modified_high_level_warm,
-                2: models.modified_high_level_cold,
-                3: models.modified_low_level_warm,
-                4: models.modified_low_level_cold,
-                5: models.modified_opposite_dominated_cold,
-                6: models.modified_opposite_warm,
-                7: models.modified_opposite_cold
-            }
+            if self.internal_smooth:
+                sensation_model = {
+                    1: models.modified_high_level_warm,
+                    2: models.modified_high_level_cold,
+                    3: models.smoothed_modified_low_level_warm,
+                    4: models.smoothed_modified_low_level_cold,
+                    5: models.modified_opposite_dominated_cold,
+                    6: models.smoothed_modified_opposite_warm,
+                    7: models.smoothed_modified_opposite_cold
+                }
+            if not self.internal_smooth:
+                sensation_model = {
+                    1: models.modified_high_level_warm,
+                    2: models.modified_high_level_cold,
+                    3: models.modified_low_level_warm,
+                    4: models.modified_low_level_cold,
+                    5: models.modified_opposite_dominated_cold,
+                    6: models.modified_opposite_warm,
+                    7: models.modified_opposite_cold
+                }
         return {model_num: model(self.local_sensation) for model_num, model in sensation_model.items()}
 
     def _get_overall_sensation(self):
