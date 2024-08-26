@@ -175,7 +175,7 @@ def opposite_warm(local_sensation):
     return overall_sensation_bigger_ex + modifier
 
 
-def opposite_cool(local_sensation):
+def opposite_cold(local_sensation):
     """Return the overall sensation calculated by opposite cool model."""
     overall_sensation_bigger = no_opposite_model(local_sensation[local_sensation <= 0], "cold")
     overall_sensation_bigger_ex = no_opposite_model(local_sensation[local_sensation <= 1], "cold")
@@ -239,7 +239,7 @@ def modified_opposite_warm(local_sensation) -> float:
     return sensation + modifier_warm + modifier_cold
 
 
-def modified_opposite_cool(local_sensation) -> float:
+def modified_opposite_cold(local_sensation) -> float:
     sensation = no_opposite_model(local_sensation.where(local_sensation <= 1, 1), 'cold')
     # sensation = no_opposite_model(local_sensation)
     # Limit sensation by dominant parts
@@ -264,6 +264,7 @@ def smoothed_low_level_warm(local_sensation) -> float:
     opposite_beta = []
     beta_x = []
     alpha = 10
+    # gamma_i = sig(x_i, alpha, 2 - interval * (i - 1))
     # beta_i = gamma_i * (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
     # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
     for i in range(2, len(local_sensation_descending)):
@@ -284,3 +285,216 @@ def smoothed_low_level_warm(local_sensation) -> float:
 
         beta_x.append(beta_x_i)
     return np.sum(beta_x)
+
+
+def smoothed_low_level_warm_0(local_sensation) -> float:
+    """Returns the overall sensation calculated by internally smoothed low level warm model."""
+    local_sensation_descending = local_sensation.sort_values(ascending=False)
+    interval = _get_interval(local_sensation_descending)
+
+    if util.are_hands_feet_most_extreme(local_sensation_descending):
+        local_sensation_descending = local_sensation_descending.drop(local_sensation_descending.index[1])
+
+    opposite_gamma = []
+    opposite_beta = []
+    beta_x = []
+    alpha = 10
+    # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
+    # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, 0) * sig(-x_i+1, alpha, 0)) *
+    #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
+    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    for i in range(2, len(local_sensation_descending)):
+        x_i = local_sensation_descending.iloc[i]
+        x_i_sum = np.mean(local_sensation_descending.iloc[:i + 1])
+
+        if i != len(local_sensation_descending) - 1:
+            x_i_plus_1 = local_sensation_descending.iloc[i + 1]
+            gamma_i = sig(x_i, alpha, 2 - interval * (i - 1))
+            beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, 0) * sig(-x_i_plus_1, alpha, 0)) * np.prod(opposite_gamma)
+            beta_x_i = x_i_sum * beta_i
+
+            opposite_gamma.append(1 - gamma_i)
+            opposite_beta.append(1 - beta_i)
+
+        else:
+            beta_i = 1 - np.prod(opposite_beta)
+            beta_x_i = x_i_sum * beta_i
+
+        beta_x.append(beta_x_i)
+    return np.sum(beta_x)
+
+
+def smoothed_low_level_warm_minus_1(local_sensation) -> float:
+    """Returns the overall sensation calculated by internally smoothed low level warm model."""
+    local_sensation_descending = local_sensation.sort_values(ascending=False)
+    interval = _get_interval(local_sensation_descending)
+
+    if util.are_hands_feet_most_extreme(local_sensation_descending):
+        local_sensation_descending = local_sensation_descending.drop(local_sensation_descending.index[1])
+
+    opposite_gamma = []
+    opposite_beta = []
+    beta_x = []
+    alpha = 10
+    # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
+    # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, -1) * sig(-x_i+1, alpha, 1)) *
+    #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
+    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    for i in range(2, len(local_sensation_descending)):
+        x_i = local_sensation_descending.iloc[i]
+        x_i_sum = np.mean(local_sensation_descending.iloc[:i + 1])
+
+        if i != len(local_sensation_descending) - 1:
+            x_i_plus_1 = local_sensation_descending.iloc[i + 1]
+            gamma_i = sig(x_i, alpha, 2 - interval * (i - 1))
+            beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, -1) * sig(-x_i_plus_1, alpha, 1)) * np.prod(opposite_gamma)
+            beta_x_i = x_i_sum * beta_i
+
+            opposite_gamma.append(1 - gamma_i)
+            opposite_beta.append(1 - beta_i)
+
+        else:
+            beta_i = 1 - np.prod(opposite_beta)
+            beta_x_i = x_i_sum * beta_i
+
+        beta_x.append(beta_x_i)
+    return np.sum(beta_x)
+
+
+def smoothed_opposite_warm(local_sensation):
+    """Return the overall sensation calculated by opposite warm model."""
+    sensation_level = util.get_sensation_level(local_sensation, "warm")
+    if sensation_level == "high":
+        overall_sensation_bigger = high_level_warm(local_sensation[local_sensation >= 0])
+        overall_sensation_bigger_ex = high_level_warm(local_sensation[local_sensation >= -1])
+    else:
+        overall_sensation_bigger = smoothed_low_level_warm_0(local_sensation)
+        overall_sensation_bigger_ex = smoothed_low_level_warm_minus_1(local_sensation)
+
+    modifier = _extreme_modifier(local_sensation[local_sensation < 0], overall_sensation_bigger)
+
+    return overall_sensation_bigger_ex + modifier
+
+
+def smoothed_low_level_cold(local_sensation) -> float:
+    """Returns the overall sensation calculated by internally smoothed low level cold model."""
+    local_sensation_ascending = local_sensation.sort_values(ascending=True)
+    interval = _get_interval(local_sensation_ascending)
+
+    if util.are_hands_feet_most_extreme(local_sensation_ascending):
+        local_sensation_ascending = local_sensation_ascending.drop(local_sensation_ascending.index[1])
+
+    opposite_gamma = []
+    opposite_beta = []
+    beta_x = []
+    alpha = 10
+    # gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
+    # beta_i = gamma_i * (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
+    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    for i in range(2, len(local_sensation_ascending)):
+        x_i = local_sensation_ascending.iloc[i]
+        x_i_sum = np.mean(local_sensation_ascending.iloc[:i + 1])
+
+        if i != len(local_sensation_ascending) - 1:
+            gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
+            beta_i = gamma_i * np.prod(opposite_gamma)  # np.prod([]) = 1
+            beta_x_i = x_i_sum * beta_i
+
+            opposite_gamma.append(1 - gamma_i)
+            opposite_beta.append(1 - beta_i)
+
+        else:
+            beta_i = 1 - np.prod(opposite_beta)
+            beta_x_i = x_i_sum * beta_i
+
+        beta_x.append(beta_x_i)
+    return np.sum(beta_x)
+
+
+def smoothed_low_level_cold_0(local_sensation) -> float:
+    """Returns the overall sensation calculated by internally smoothed low level warm model."""
+    local_sensation_ascending = local_sensation.sort_values(ascending=True)
+    interval = _get_interval(local_sensation_ascending)
+
+    if util.are_hands_feet_most_extreme(local_sensation_ascending):
+        local_sensation_ascending = local_sensation_ascending.drop(local_sensation_ascending.index[1])
+
+    opposite_gamma = []
+    opposite_beta = []
+    beta_x = []
+    alpha = 10
+    # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
+    # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, 0) * sig(-x_i+1, alpha, 0)) *
+    #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
+    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    for i in range(2, len(local_sensation_ascending)):
+        x_i = local_sensation_ascending.iloc[i]
+        x_i_sum = np.mean(local_sensation_ascending.iloc[:i + 1])
+
+        if i != len(local_sensation_ascending) - 1:
+            x_i_plus_1 = local_sensation_ascending.iloc[i + 1]
+            gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
+            beta_i = (gamma_i + (1 - gamma_i) * sig(-x_i, alpha, 0) * sig(x_i_plus_1, alpha, 0)) * np.prod(opposite_gamma)
+            beta_x_i = x_i_sum * beta_i
+
+            opposite_gamma.append(1 - gamma_i)
+            opposite_beta.append(1 - beta_i)
+
+        else:
+            beta_i = 1 - np.prod(opposite_beta)
+            beta_x_i = x_i_sum * beta_i
+
+        beta_x.append(beta_x_i)
+    return np.sum(beta_x)
+
+
+def smoothed_low_level_cold_plus_1(local_sensation) -> float:
+    """Returns the overall sensation calculated by internally smoothed low level warm model."""
+    local_sensation_ascending = local_sensation.sort_values(ascending=True)
+    interval = _get_interval(local_sensation_ascending)
+
+    if util.are_hands_feet_most_extreme(local_sensation_ascending):
+        local_sensation_ascending = local_sensation_ascending.drop(local_sensation_ascending.index[1])
+
+    opposite_gamma = []
+    opposite_beta = []
+    beta_x = []
+    alpha = 10
+    # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
+    # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, -1) * sig(-x_i+1, alpha, 1)) *
+    #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
+    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    for i in range(2, len(local_sensation_ascending)):
+        x_i = local_sensation_ascending.iloc[i]
+        x_i_sum = np.mean(local_sensation_ascending.iloc[:i + 1])
+
+        if i != len(local_sensation_ascending) - 1:
+            x_i_plus_1 = local_sensation_ascending.iloc[i + 1]
+            gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
+            beta_i = (gamma_i + (1 - gamma_i) * sig(-x_i, alpha, -1) * sig(x_i_plus_1, alpha, 1)) * np.prod(opposite_gamma)
+            beta_x_i = x_i_sum * beta_i
+
+            opposite_gamma.append(1 - gamma_i)
+            opposite_beta.append(1 - beta_i)
+
+        else:
+            beta_i = 1 - np.prod(opposite_beta)
+            beta_x_i = x_i_sum * beta_i
+
+        beta_x.append(beta_x_i)
+    return np.sum(beta_x)
+
+
+def smoothed_opposite_cold(local_sensation):
+    """Return the overall sensation calculated by opposite warm model."""
+    sensation_level = util.get_sensation_level(local_sensation, "cold")
+    if sensation_level == "high":
+        overall_sensation_bigger = high_level_cold(local_sensation[local_sensation <= 0])
+        overall_sensation_bigger_ex = high_level_cold(local_sensation[local_sensation <= 1])
+    else:
+        overall_sensation_bigger = smoothed_low_level_cold_0(local_sensation)
+        overall_sensation_bigger_ex = smoothed_low_level_cold_plus_1(local_sensation)
+
+    modifier = _extreme_modifier(local_sensation[local_sensation > 0], overall_sensation_bigger)
+
+    return overall_sensation_bigger_ex + modifier

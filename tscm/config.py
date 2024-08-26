@@ -61,6 +61,7 @@ class OverallSensationConfig:
                  smooth: bool = False,
                  smooth_alpha: int = 5,
                  smooth_adjusted: bool = True,
+                 internal_smooth: bool = False,
                  model_type: Literal['origin', 'modified'] = 'origin'):
         """
         Args:
@@ -83,6 +84,7 @@ class OverallSensationConfig:
         self.smooth_alpha = smooth_alpha
         self.smooth = smooth
         self.smooth_adjusted = smooth_adjusted
+        self.internal_smooth = internal_smooth
         self.model_type = model_type
 
 

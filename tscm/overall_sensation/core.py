@@ -31,6 +31,7 @@ class OverallSensationCalculator:
         self.smooth_alpha = overall_sensation_config.smooth_alpha
         self.smooth = overall_sensation_config.smooth
         self.smooth_adjusted = overall_sensation_config.smooth_adjusted
+        self.internal_smooth = overall_sensation_config.internal_smooth
         self.model_type = overall_sensation_config.model_type
 
     @property
@@ -136,15 +137,26 @@ class OverallSensationCalculator:
         sensation_model = {}
 
         if self.model_type == "origin":
-            sensation_model = {
-                1: models.high_level_warm,
-                2: models.high_level_cold,
-                3: models.low_level_warm,
-                4: models.low_level_cold,
-                5: models.opposite_dominated_cold,
-                6: models.opposite_warm,
-                7: models.opposite_cool
-            }
+            if self.internal_smooth:
+                sensation_model = {
+                    1: models.high_level_warm,
+                    2: models.high_level_cold,
+                    3: models.smoothed_low_level_warm,
+                    4: models.smoothed_low_level_cold,
+                    5: models.opposite_dominated_cold,
+                    6: models.smoothed_opposite_warm,
+                    7: models.smoothed_opposite_cold
+                }
+            if not self.internal_smooth:
+                sensation_model = {
+                    1: models.high_level_warm,
+                    2: models.high_level_cold,
+                    3: models.low_level_warm,
+                    4: models.low_level_cold,
+                    5: models.opposite_dominated_cold,
+                    6: models.opposite_warm,
+                    7: models.opposite_cold
+                }
 
         if self.model_type == "modified":
             sensation_model = {
@@ -154,7 +166,7 @@ class OverallSensationCalculator:
                 4: models.modified_low_level_cold,
                 5: models.modified_opposite_dominated_cold,
                 6: models.modified_opposite_warm,
-                7: models.modified_opposite_cool
+                7: models.modified_opposite_cold
             }
         return {model_num: model(self.local_sensation) for model_num, model in sensation_model.items()}
 
@@ -251,12 +263,12 @@ class OverallSensationCalculator:
             return y_i + np.sum(w_y_ik)
 
         w_y_ik_max_index = np.argmax(np.abs(w_y_ik))
-        print(w_y_ik)
-        print(w_ik)
+        # print(w_y_ik)
+        # print(w_ik)
         y_i_modified = y_i + w_y_ik[w_y_ik_max_index]
         y_ik_modified = [y_k[i] - y_i if i == w_y_ik_max_index else y_k[i] - y_i_modified for i in range(len(y_k))]
         w_y_ik_modified = [float(w * y) for w, y in zip(w_ik, y_ik_modified)]
-        print(w_y_ik_modified)
+        # print(w_y_ik_modified)
 
         return y_i + np.sum(w_y_ik_modified)
 
