@@ -1,5 +1,5 @@
 .idea/
 .cache/
 __pycache__/
-setpoint_reorganize/
-test/
+# setpoint_reorganize/
+# test/
