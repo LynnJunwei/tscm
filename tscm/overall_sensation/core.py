@@ -25,14 +25,8 @@ class OverallSensationCalculator:
                 Refer to class OverallSensationConfig.
         """
         self.local_sensation = local_sensation
-
         self.body_parts = self.local_sensation.index
-
-        self.smooth_alpha = overall_sensation_config.smooth_alpha
-        self.smooth = overall_sensation_config.smooth
-        self.smooth_adjusted = overall_sensation_config.smooth_adjusted
-        self.internal_smooth = overall_sensation_config.internal_smooth
-        self.original_model = overall_sensation_config.original_model
+        self.config = overall_sensation_config
 
     @property
     def bigger_group(self) -> Literal["warm", "cold"]:
@@ -108,9 +102,9 @@ class OverallSensationCalculator:
             The number of overall sensation calculation model.
         """
         if self.is_cold_dominated:
-            if self.original_model and self.local_sensation.max() > 0:
+            if self.config.original_model and self.local_sensation.max() > 0:
                 return 5
-            if not self.original_model:
+            if not self.config.original_model:
                 # modified models
                 return 5
 
@@ -140,8 +134,8 @@ class OverallSensationCalculator:
         """A series of overall sensations for different overall sensation models."""
         sensation_model = {}
 
-        if self.original_model:
-            if self.internal_smooth:
+        if self.config.original_model:
+            if self.config.internal_smooth:
                 sensation_model = {
                     1: models.high_level_warm,
                     2: models.high_level_cold,
@@ -151,7 +145,7 @@ class OverallSensationCalculator:
                     6: models.smoothed_opposite_warm,
                     7: models.smoothed_opposite_cold
                 }
-            if not self.internal_smooth:
+            if not self.config.internal_smooth:
                 sensation_model = {
                     1: models.high_level_warm,
                     2: models.high_level_cold,
@@ -162,32 +156,32 @@ class OverallSensationCalculator:
                     7: models.opposite_cold
                 }
 
-        if not self.original_model:
+        if not self.config.original_model:
             # modified models
-            if self.internal_smooth:
+            if self.config.internal_smooth:
                 sensation_model = {
                     1: models.modified_high_level_warm,
                     2: models.modified_high_level_cold,
                     3: models.smoothed_modified_low_level_warm,
                     4: models.smoothed_modified_low_level_cold,
-                    5: models.modified_opposite_dominated_cold,
+                    5: models.modified_dominated_cold,
                     6: models.smoothed_modified_opposite_warm,
                     7: models.smoothed_modified_opposite_cold
                 }
-            if not self.internal_smooth:
+            if not self.config.internal_smooth:
                 sensation_model = {
                     1: models.modified_high_level_warm,
                     2: models.modified_high_level_cold,
                     3: models.modified_low_level_warm,
                     4: models.modified_low_level_cold,
-                    5: models.modified_opposite_dominated_cold,
+                    5: models.modified_dominated_cold,
                     6: models.modified_opposite_warm,
                     7: models.modified_opposite_cold
                 }
         return {model_num: model(self.local_sensation) for model_num, model in sensation_model.items()}
 
     def _get_overall_sensation(self):
-        if not self.smooth:
+        if not self.config.external_smooth_alpha:
             return self.overall_sensations_dict[self.model_num]
 
         def sig(x, a, t):
@@ -202,7 +196,7 @@ class OverallSensationCalculator:
 
         y_dict = self.overall_sensations_dict
         y_i = y_dict[self.model_num]
-        alpha = self.smooth_alpha
+        alpha = self.config.external_smooth_alpha
 
         y_k_dict = {
             1: [y_dict[i] for i in [3, 5, 6, 7]],
@@ -273,7 +267,7 @@ class OverallSensationCalculator:
         y_ik = [y - y_i for y in y_k]
         w_y_ik = [float(w * y) for w, y in zip(w_ik, y_ik)]
 
-        if not self.smooth_adjusted:
+        if not self.config.external_smooth_adjusted:
             return y_i + np.sum(w_y_ik)
 
         w_y_ik_max_index = np.argmax(np.abs(w_y_ik))
