@@ -62,7 +62,7 @@ class OverallSensationConfig:
                  smooth_alpha: int = 5,
                  smooth_adjusted: bool = True,
                  internal_smooth: bool = False,
-                 model_type: Literal['origin', 'modified'] = 'origin'):
+                 original_model: bool = True):
         """
         Args:
             smooth:
@@ -72,20 +72,15 @@ class OverallSensationConfig:
             smooth_adjusted:
                 A boolean to control whether to use the adjusted smoothing method. After adjusting, the fluctuation
                 happens in critical state could be fixed. Only work when smooth is set to True. Default is True.
-            model_type:
-                The type of overall sensation model. Default is 'origin'.
-
-                - **'origin':**
-                  The original overall sensation model.
-
-                - **'modified':**
-                  The modified overall sensation model with the smoothing method.
+            original_model:
+                A boolean to define whether the original model is applied. If True, the calculation will be based on
+                the original model, otherwise it will be based on the modified model. Default is True.
         """
         self.smooth_alpha = smooth_alpha
         self.smooth = smooth
         self.smooth_adjusted = smooth_adjusted
         self.internal_smooth = internal_smooth
-        self.model_type = model_type
+        self.original_model = original_model
 
 
 class HumanConfig:

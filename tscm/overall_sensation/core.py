@@ -32,7 +32,7 @@ class OverallSensationCalculator:
         self.smooth = overall_sensation_config.smooth
         self.smooth_adjusted = overall_sensation_config.smooth_adjusted
         self.internal_smooth = overall_sensation_config.internal_smooth
-        self.model_type = overall_sensation_config.model_type
+        self.original_model = overall_sensation_config.original_model
 
     @property
     def bigger_group(self) -> Literal["warm", "cold"]:
@@ -136,7 +136,7 @@ class OverallSensationCalculator:
         """A series of overall sensations for different overall sensation models."""
         sensation_model = {}
 
-        if self.model_type == "origin":
+        if self.original_model is True:
             if self.internal_smooth:
                 sensation_model = {
                     1: models.high_level_warm,
@@ -158,7 +158,8 @@ class OverallSensationCalculator:
                     7: models.opposite_cold
                 }
 
-        if self.model_type == "modified":
+        if self.original_model is False:
+            # modified models
             if self.internal_smooth:
                 sensation_model = {
                     1: models.modified_high_level_warm,
