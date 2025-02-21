@@ -107,7 +107,10 @@ class OverallSensationCalculator:
         Returns:
             The number of overall sensation calculation model.
         """
-        if self.bigger_group == "warm" and self.is_cold_dominated:
+        if not self.are_sensations_no_opposite and self.is_cold_dominated and self.model_type == "origin":
+        # if min(self.local_sensation) >= 0 and self.is_cold_dominated and self.model_type == "origin":
+            return 5
+        if self.is_cold_dominated and self.model_type == "modified":
             return 5
 
         if not self.are_sensations_no_opposite:
@@ -220,7 +223,8 @@ class OverallSensationCalculator:
             ],
             2: [
                 sig(x5, alpha, -2),
-                sig(-x1, alpha, 1) * sig(x2, alpha, 0) * sig(x6, alpha, 0),
+                # sig(-x1, alpha, 1) * sig(x2, alpha, 0) * sig(x6, alpha, 0),
+                sig(-x1, alpha, 1) * sig(x2, alpha, 0),
                 sig(x6, alpha, 0) * sig(x1, alpha, -1),
                 sig(x2, alpha, 1) * sig(x1, alpha, -1),
             ],
@@ -234,7 +238,8 @@ class OverallSensationCalculator:
             4: [
                 sig(-x5, alpha, 2),
                 sig(x6, alpha, 0) * sig(x3, alpha, -1),
-                sig(-x1, alpha, 1) * sig(x2, alpha, 0) * sig(x6, alpha, 0),
+                # sig(-x1, alpha, 1) * sig(x2, alpha, 0) * sig(x6, alpha, 0),
+                sig(-x1, alpha, 1) * sig(x2, alpha, 0),
                 sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, -1),
                 sig(x2, alpha, 1) * sig(x1, alpha, -1),
             ],
@@ -259,6 +264,7 @@ class OverallSensationCalculator:
                 sig(-x2, alpha, -1) * sig(-x5, alpha, 2),
                 sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
                 sig(-x2, alpha, -1) * sig(x5, alpha, -2),
+                # sig(-x1, alpha, 1) * sig(x6, alpha, 0),
                 sig(-x1, alpha, 1),
                 sig(x6, alpha, 0) * sig(-x3, alpha, 1),
             ]
@@ -273,7 +279,7 @@ class OverallSensationCalculator:
         if not self.smooth_adjusted:
             return y_i + np.sum(w_y_ik)
 
-        w_y_ik_max_index = np.argmax(np.abs(w_y_ik))
+        w_y_ik_max_index = np.argmax(np.abs(w_ik))
         # print(w_y_ik)
         # print(w_ik)
         y_i_modified = y_i + w_y_ik[w_y_ik_max_index]

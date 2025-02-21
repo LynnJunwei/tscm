@@ -82,7 +82,8 @@ def _extreme_modifier(local_sensation, baseline_sensation):
         [value for value in correction_factor_map.values()]
     )
 
-    return combined_force * correction_factor
+    # return combined_force * correction_factor
+    return combined_force
 
 
 def sig(x, a, t):
@@ -114,9 +115,10 @@ def low_level_warm(local_sensation) -> float:
     local_sensation_descending = local_sensation.sort_values(ascending=False)
     interval = _get_interval(local_sensation_descending)
 
-    if util.are_hands_feet_most_extreme(local_sensation_descending):
-        local_sensation_descending = local_sensation_descending.drop(local_sensation_descending.index[1])
     local_sensation_selected = list(local_sensation_descending)[:2]
+    if util.are_hands_feet_most_extreme(local_sensation_descending):
+        local_sensation_selected = list(local_sensation_descending)[:3]
+        local_sensation_descending = local_sensation_descending.drop(local_sensation_descending.index[1])
     for i in range(2, len(local_sensation_descending)):
         local_sensation_selected.append(local_sensation_descending.iloc[i])
         if local_sensation_descending.iloc[i] > 2 - interval * (i - 1):
@@ -130,14 +132,14 @@ def low_level_cold(local_sensation) -> float:
     local_sensation_ascending = local_sensation.sort_values(ascending=True)
     interval = _get_interval(local_sensation_ascending)
 
-    if util.are_hands_feet_most_extreme(local_sensation_ascending):
-        local_sensation_ascending = local_sensation_ascending.drop(local_sensation_ascending.index[1])
     local_sensation_selected = list(local_sensation_ascending)[:2]
+    if util.are_hands_feet_most_extreme(local_sensation_ascending):
+        local_sensation_selected = list(local_sensation_ascending)[:3]
+        local_sensation_ascending = local_sensation_ascending.drop(local_sensation_ascending.index[1])
     for i in range(2, len(local_sensation_ascending)):
         local_sensation_selected.append(local_sensation_ascending.iloc[i])
         if local_sensation_ascending.iloc[i] < -2 + interval * (i - 1):
             break
-
     return np.mean(local_sensation_selected)
 
 
@@ -196,8 +198,6 @@ def modified_high_level_warm(local_sensation) -> float:
 
 def modified_high_level_cold(local_sensation) -> float:
     sensation = high_level_cold(local_sensation)
-    # Limit sensation by dominant parts
-    sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
     # sensations less than -1 and overall sensation are considered for modifier
     threshold = min([sensation, -1])
     modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
@@ -210,12 +210,11 @@ def modified_low_level_warm(local_sensation) -> float:
     threshold = max([sensation, 1])
     modifier = _extreme_modifier(local_sensation[local_sensation > threshold], sensation)
     return sensation + modifier
+    # return sensation
 
 
 def modified_low_level_cold(local_sensation) -> float:
     sensation = low_level_cold(local_sensation)
-    # Limit sensation by dominant parts
-    sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
     # sensations less than -1 and overall sensation are considered for modifier
     threshold = min([sensation, -1])
     modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
@@ -223,34 +222,37 @@ def modified_low_level_cold(local_sensation) -> float:
 
 
 def modified_opposite_dominated_cold(local_sensation) -> float:
-    sensation = opposite_dominated_cold(local_sensation)
-    modifier_warm = _extreme_modifier(local_sensation[local_sensation > 0], 0)
+    bigger_group = util.get_bigger_group(local_sensation)
+    sensation = no_opposite_model(local_sensation, bigger_group)
+    sensation = min([opposite_dominated_cold(local_sensation), sensation])
+    modifier_warm = _extreme_modifier(local_sensation[local_sensation > 0], sensation)
     threshold = min([sensation, -1])
     modifier_cold = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
     return sensation + modifier_warm + modifier_cold
 
 
 def modified_opposite_warm(local_sensation) -> float:
-    sensation = no_opposite_model(local_sensation.where(local_sensation >= -1, -1), 'warm')
-    # sensation = no_opposite_model(local_sensation)
-    modifier_cold = _extreme_modifier(local_sensation[local_sensation < 0], 0)
-    threshold = max([sensation, 0])
+    # sensation = no_opposite_model(local_sensation.where(local_sensation >= -1, -1), 'warm')
+    sensation = no_opposite_model(local_sensation, 'warm')
+    modifier_cold = _extreme_modifier(local_sensation[local_sensation < 1], sensation)
+    threshold = max([sensation, 1])
     modifier_warm = _extreme_modifier(local_sensation[local_sensation > threshold], sensation)
     return sensation + modifier_warm + modifier_cold
+    # return sensation + modifier_cold
 
 
 def modified_opposite_cold(local_sensation) -> float:
-    sensation = no_opposite_model(local_sensation.where(local_sensation <= 1, 1), 'cold')
-    # sensation = no_opposite_model(local_sensation)
-    # Limit sensation by dominant parts
-    sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
-    modifier_warm = _extreme_modifier(local_sensation[local_sensation > 0], 0)
-    threshold = min([sensation, 0])
+    # sensation = no_opposite_model(local_sensation.where(local_sensation <= 1, 1), 'cold')
+    sensation = no_opposite_model(local_sensation, 'cold')
+    modifier_warm = _extreme_modifier(local_sensation[local_sensation > 1], sensation)
+    threshold = min([sensation, -1])
     modifier_cold = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
     return sensation + modifier_warm + modifier_cold
 
-
 # ------------------------------Internally Smoothed Sensation Model-----------------------------------------------
+
+internal_smooth_alpha = 30
+
 
 def smoothed_low_level_warm(local_sensation) -> float:
     """Returns the overall sensation calculated by internally smoothed low level warm model."""
@@ -262,8 +264,8 @@ def smoothed_low_level_warm(local_sensation) -> float:
 
     opposite_gamma = []
     opposite_beta = []
+    beta = []
     beta_x = []
-    alpha = 10
     # gamma_i = sig(x_i, alpha, 2 - interval * (i - 1))
     # beta_i = gamma_i * (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
     # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
@@ -272,15 +274,17 @@ def smoothed_low_level_warm(local_sensation) -> float:
         x_i_sum = np.mean(local_sensation_descending.iloc[:i + 1])
 
         if i != len(local_sensation_descending) - 1:
-            gamma_i = sig(x_i, alpha, 2 - interval * (i - 1))
+            gamma_i = sig(x_i, internal_smooth_alpha, 2 - interval * (i - 1))
             beta_i = gamma_i * np.prod(opposite_gamma)  # np.prod([]) = 1
             beta_x_i = x_i_sum * beta_i
 
             opposite_gamma.append(1 - gamma_i)
             opposite_beta.append(1 - beta_i)
+            beta.append(beta_i)
 
         else:
-            beta_i = 1 - np.prod(opposite_beta)
+            beta_i = np.prod(opposite_beta)
+            # beta_i = 1 - np.sum(beta)
             beta_x_i = x_i_sum * beta_i
 
         beta_x.append(beta_x_i)
@@ -297,8 +301,8 @@ def smoothed_low_level_warm_0(local_sensation) -> float:
 
     opposite_gamma = []
     opposite_beta = []
+    beta = []
     beta_x = []
-    alpha = 10
     # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
     # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, 0) * sig(-x_i+1, alpha, 0)) *
     #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
@@ -309,15 +313,20 @@ def smoothed_low_level_warm_0(local_sensation) -> float:
 
         if i != len(local_sensation_descending) - 1:
             x_i_plus_1 = local_sensation_descending.iloc[i + 1]
-            gamma_i = sig(x_i, alpha, 2 - interval * (i - 1))
-            beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, 0) * sig(-x_i_plus_1, alpha, 0)) * np.prod(opposite_gamma)
+            gamma_i = sig(x_i, internal_smooth_alpha, 2 - interval * (i - 1))
+            beta_i = (
+                    (gamma_i +
+                     (1 - gamma_i) * sig(x_i, internal_smooth_alpha, 0) * sig(-x_i_plus_1, internal_smooth_alpha, 0))
+                    * np.prod(opposite_gamma)
+            )
             beta_x_i = x_i_sum * beta_i
 
             opposite_gamma.append(1 - gamma_i)
             opposite_beta.append(1 - beta_i)
+            beta.append(beta_i)
 
         else:
-            beta_i = 1 - np.prod(opposite_beta)
+            beta_i = 1 - np.sum(beta)
             beta_x_i = x_i_sum * beta_i
 
         beta_x.append(beta_x_i)
@@ -334,8 +343,8 @@ def smoothed_low_level_warm_minus_1(local_sensation) -> float:
 
     opposite_gamma = []
     opposite_beta = []
+    beta = []
     beta_x = []
-    alpha = 10
     # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
     # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, -1) * sig(-x_i+1, alpha, 1)) *
     #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
@@ -346,15 +355,20 @@ def smoothed_low_level_warm_minus_1(local_sensation) -> float:
 
         if i != len(local_sensation_descending) - 1:
             x_i_plus_1 = local_sensation_descending.iloc[i + 1]
-            gamma_i = sig(x_i, alpha, 2 - interval * (i - 1))
-            beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, -1) * sig(-x_i_plus_1, alpha, 1)) * np.prod(opposite_gamma)
+            gamma_i = sig(x_i, internal_smooth_alpha, 2 - interval * (i - 1))
+            beta_i = (
+                    (gamma_i +
+                     (1 - gamma_i) * sig(x_i, internal_smooth_alpha, -1) * sig(-x_i_plus_1, internal_smooth_alpha, 1))
+                    * np.prod(opposite_gamma)
+            )
             beta_x_i = x_i_sum * beta_i
 
             opposite_gamma.append(1 - gamma_i)
             opposite_beta.append(1 - beta_i)
+            beta.append(beta_i)
 
         else:
-            beta_i = 1 - np.prod(opposite_beta)
+            beta_i = 1 - np.sum(beta)
             beta_x_i = x_i_sum * beta_i
 
         beta_x.append(beta_x_i)
@@ -386,8 +400,8 @@ def smoothed_low_level_cold(local_sensation) -> float:
 
     opposite_gamma = []
     opposite_beta = []
+    beta = []
     beta_x = []
-    alpha = 10
     # gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
     # beta_i = gamma_i * (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
     # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
@@ -396,15 +410,16 @@ def smoothed_low_level_cold(local_sensation) -> float:
         x_i_sum = np.mean(local_sensation_ascending.iloc[:i + 1])
 
         if i != len(local_sensation_ascending) - 1:
-            gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
+            gamma_i = sig(-x_i, internal_smooth_alpha, 2 - interval * (i - 1))
             beta_i = gamma_i * np.prod(opposite_gamma)  # np.prod([]) = 1
             beta_x_i = x_i_sum * beta_i
 
             opposite_gamma.append(1 - gamma_i)
             opposite_beta.append(1 - beta_i)
+            beta.append(beta_i)
 
         else:
-            beta_i = 1 - np.prod(opposite_beta)
+            beta_i = 1 - np.sum(beta)
             beta_x_i = x_i_sum * beta_i
 
         beta_x.append(beta_x_i)
@@ -421,8 +436,8 @@ def smoothed_low_level_cold_0(local_sensation) -> float:
 
     opposite_gamma = []
     opposite_beta = []
+    beta = []
     beta_x = []
-    alpha = 10
     # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
     # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, 0) * sig(-x_i+1, alpha, 0)) *
     #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
@@ -433,15 +448,20 @@ def smoothed_low_level_cold_0(local_sensation) -> float:
 
         if i != len(local_sensation_ascending) - 1:
             x_i_plus_1 = local_sensation_ascending.iloc[i + 1]
-            gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
-            beta_i = (gamma_i + (1 - gamma_i) * sig(-x_i, alpha, 0) * sig(x_i_plus_1, alpha, 0)) * np.prod(opposite_gamma)
+            gamma_i = sig(-x_i, internal_smooth_alpha, 2 - interval * (i - 1))
+            beta_i = (
+                    (gamma_i +
+                     (1 - gamma_i) * sig(-x_i, internal_smooth_alpha, 0) * sig(x_i_plus_1, internal_smooth_alpha, 0))
+                    * np.prod(opposite_gamma)
+            )
             beta_x_i = x_i_sum * beta_i
 
             opposite_gamma.append(1 - gamma_i)
             opposite_beta.append(1 - beta_i)
+            beta.append(beta_i)
 
         else:
-            beta_i = 1 - np.prod(opposite_beta)
+            beta_i = 1 - np.sum(beta)
             beta_x_i = x_i_sum * beta_i
 
         beta_x.append(beta_x_i)
@@ -458,8 +478,8 @@ def smoothed_low_level_cold_plus_1(local_sensation) -> float:
 
     opposite_gamma = []
     opposite_beta = []
+    beta = []
     beta_x = []
-    alpha = 10
     # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
     # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, -1) * sig(-x_i+1, alpha, 1)) *
     #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
@@ -470,15 +490,20 @@ def smoothed_low_level_cold_plus_1(local_sensation) -> float:
 
         if i != len(local_sensation_ascending) - 1:
             x_i_plus_1 = local_sensation_ascending.iloc[i + 1]
-            gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
-            beta_i = (gamma_i + (1 - gamma_i) * sig(-x_i, alpha, -1) * sig(x_i_plus_1, alpha, 1)) * np.prod(opposite_gamma)
+            gamma_i = sig(-x_i, internal_smooth_alpha, 2 - interval * (i - 1))
+            beta_i = (
+                    (gamma_i +
+                     (1 - gamma_i) * sig(-x_i, internal_smooth_alpha, -1) * sig(x_i_plus_1, internal_smooth_alpha, 1))
+                    * np.prod(opposite_gamma)
+            )
             beta_x_i = x_i_sum * beta_i
 
             opposite_gamma.append(1 - gamma_i)
             opposite_beta.append(1 - beta_i)
+            beta.append(beta_i)
 
         else:
-            beta_i = 1 - np.prod(opposite_beta)
+            beta_i = 1 - np.sum(beta)
             beta_x_i = x_i_sum * beta_i
 
         beta_x.append(beta_x_i)
