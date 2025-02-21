@@ -100,15 +100,19 @@ class OverallSensationCalculator:
             2. No-opposite high level cold (complaint cold)
             3. No-opposite low level warm (gradual warm)
             4. No-opposite low level cold (gradual cold)
-            5. Opposite dominated cold
+            5. Opposite-dominated cold / Dominated cold (for modified models)
             6. Opposite warm
             7. Opposite cool
 
         Returns:
             The number of overall sensation calculation model.
         """
-        if self.bigger_group == "warm" and self.is_cold_dominated:
-            return 5
+        if self.is_cold_dominated:
+            if self.original_model and self.local_sensation.max() > 0:
+                return 5
+            if not self.original_model:
+                # modified models
+                return 5
 
         if not self.are_sensations_no_opposite:
             if self.bigger_group == "warm":
@@ -136,7 +140,7 @@ class OverallSensationCalculator:
         """A series of overall sensations for different overall sensation models."""
         sensation_model = {}
 
-        if self.original_model is True:
+        if self.original_model:
             if self.internal_smooth:
                 sensation_model = {
                     1: models.high_level_warm,
@@ -158,7 +162,7 @@ class OverallSensationCalculator:
                     7: models.opposite_cold
                 }
 
-        if self.original_model is False:
+        if not self.original_model:
             # modified models
             if self.internal_smooth:
                 sensation_model = {
@@ -197,8 +201,8 @@ class OverallSensationCalculator:
         x6 = self.local_sensation.median()
 
         y_dict = self.overall_sensations_dict
-
         y_i = y_dict[self.model_num]
+        alpha = self.smooth_alpha
 
         y_k_dict = {
             1: [y_dict[i] for i in [3, 5, 6, 7]],
@@ -209,8 +213,6 @@ class OverallSensationCalculator:
             6: [y_dict[i] for i in [1, 2, 3, 4, 5, 7]],
             7: [y_dict[i] for i in [1, 2, 3, 4, 5, 6]]
         }
-
-        alpha = self.smooth_alpha
 
         w_ik_dict = {
             1: [
