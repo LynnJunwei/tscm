@@ -77,7 +77,7 @@ def _opposite_modifier(local_sensation, baseline_sensation):
 
 
 def high_level_warm(local_sensation) -> float:
-    """Returns the overall sensation calculated by no-opposite high level warm (complaint warm) model."""
+    """Returns the overall sensation calculated by no-opposite high-level warm (complaint warm) model."""
     local_sensation_descending = local_sensation.sort_values(ascending=False)
     if utils.are_hands_feet_most_extreme(local_sensation_descending):
         return 0.5 * local_sensation_descending.iloc[0] + 0.5 * local_sensation_descending.iloc[2]
@@ -86,7 +86,7 @@ def high_level_warm(local_sensation) -> float:
 
 
 def high_level_cold(local_sensation) -> float:
-    """Returns the overall sensation calculated by no-opposite high level cold (complaint cold) model."""
+    """Returns the overall sensation calculated by no-opposite high-level cold (complaint cold) model."""
     local_sensation_ascending = local_sensation.sort_values(ascending=True)
     if utils.are_hands_feet_most_extreme(local_sensation_ascending):
         return 0.38 * local_sensation_ascending.iloc[0] + 0.62 * local_sensation_ascending.iloc[2]
@@ -95,7 +95,7 @@ def high_level_cold(local_sensation) -> float:
 
 
 def low_level_warm(local_sensation) -> float:
-    """Returns the overall sensation calculated by no-opposite low level warm (gradual warm) model."""
+    """Returns the overall sensation calculated by no-opposite low-level warm (gradual warm) model."""
     local_sensation_descending = local_sensation.sort_values(ascending=False)
     interval = _get_interval(local_sensation_descending)
 
@@ -111,7 +111,7 @@ def low_level_warm(local_sensation) -> float:
 
 
 def low_level_cold(local_sensation) -> float:
-    """Returns the overall sensation calculated by no-opposite low level cold (gradual cold) model."""
+    """Returns the overall sensation calculated by no-opposite low-level cold (gradual cold) model."""
     local_sensation_ascending = local_sensation.sort_values(ascending=True)
     interval = _get_interval(local_sensation_ascending)
 
@@ -147,7 +147,7 @@ def no_opposite_model(local_sensation, bigger_group):
 
 
 def opposite_dominated_cold(local_sensation):
-    """Return the overall sensation calculated by opposite dominated cold model."""
+    """Return the overall sensation calculated by opposite-dominated cold model."""
     return min(local_sensation[DOMINANT_BODY_PARTS])
 
 
@@ -229,6 +229,7 @@ def _extreme_modifier(local_sensation, baseline_sensation):
 
 
 def modified_high_level_warm(local_sensation) -> float:
+    """Returns the overall sensation calculated by modified no-opposite high-level warm (complaint warm) model."""
     sensation = high_level_warm(local_sensation)
     # sensations larger than 1 and overall sensation are considered for modifier
     threshold = max([sensation, 1])
@@ -237,6 +238,7 @@ def modified_high_level_warm(local_sensation) -> float:
 
 
 def modified_high_level_cold(local_sensation) -> float:
+    """Returns the overall sensation calculated by modified no-opposite high-level cold (complaint cold) model."""
     sensation = high_level_cold(local_sensation)
     # sensations less than -1 and overall sensation are considered for modifier
     threshold = min([sensation, -1])
@@ -245,6 +247,7 @@ def modified_high_level_cold(local_sensation) -> float:
 
 
 def modified_low_level_warm(local_sensation) -> float:
+    """Returns the overall sensation calculated by modified no-opposite low-level warm (gradual warm) model."""
     sensation = low_level_warm(local_sensation)
     # sensations larger than 1 and overall sensation are considered for modifier
     threshold = max([sensation, 1])
@@ -253,14 +256,16 @@ def modified_low_level_warm(local_sensation) -> float:
 
 
 def modified_low_level_cold(local_sensation) -> float:
+    """Returns the overall sensation calculated by modified no-opposite low-level cold (gradual cold) model."""
     sensation = low_level_cold(local_sensation)
-    # Limit sensation by dominant parts
+    # sensations less than -1 and overall sensation are considered for modifier
     threshold = min([sensation, -1])
     modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
     return sensation + modifier
 
 
 def modified_dominated_cold(local_sensation) -> float:
+    """Return the overall sensation calculated by modified dominated cold model."""
     bigger_group = utils.get_bigger_group(local_sensation)
     # lower value of local sensation in the dominant parts and from no-opposite model
     sensation = min([opposite_dominated_cold(local_sensation), no_opposite_model(local_sensation, bigger_group)])
@@ -272,6 +277,7 @@ def modified_dominated_cold(local_sensation) -> float:
 
 
 def modified_opposite_warm(local_sensation) -> float:
+    """Return the overall sensation calculated by modified opposite warm model."""
     sensation = no_opposite_model(local_sensation, 'warm')
 
     modifier_cold = _extreme_modifier(local_sensation[local_sensation < -1], sensation)
@@ -281,6 +287,7 @@ def modified_opposite_warm(local_sensation) -> float:
 
 
 def modified_opposite_cold(local_sensation) -> float:
+    """Return the overall sensation calculated by modified opposite cold model."""
     sensation = no_opposite_model(local_sensation, 'cold')
 
     modifier_warm = _extreme_modifier(local_sensation[local_sensation > 1], sensation)
@@ -292,7 +299,7 @@ def modified_opposite_cold(local_sensation) -> float:
 # ------------------------------Internally Smoothed Sensation Model-----------------------------------------------
 
 def smoothed_low_level_warm(local_sensation, alpha) -> float:
-    """Returns the overall sensation calculated by internally smoothed low level warm model."""
+    """Returns the overall sensation calculated by internally smoothed low-level warm model."""
     local_sensation_descending = local_sensation.sort_values(ascending=False)
     interval = _get_interval(local_sensation_descending)
 
@@ -327,7 +334,7 @@ def smoothed_low_level_warm(local_sensation, alpha) -> float:
 
 
 def smoothed_low_level_warm_0(local_sensation, alpha) -> float:
-    """Returns the overall sensation calculated by internally smoothed low level warm model for bigger group."""
+    """Returns the overall sensation calculated by internally smoothed low-level warm model for bigger group (x_i > 0)."""
     local_sensation_descending = local_sensation.sort_values(ascending=False)
     interval = _get_interval(local_sensation_descending)
 
@@ -364,7 +371,7 @@ def smoothed_low_level_warm_0(local_sensation, alpha) -> float:
 
 
 def smoothed_low_level_warm_minus_1(local_sensation, alpha) -> float:
-    """Returns the overall sensation calculated by internally smoothed low level warm model for extended bigger group."""
+    """Returns the overall sensation calculated by internally smoothed low-level warm model for extended bigger group (x_i > -1)."""
     local_sensation_descending = local_sensation.sort_values(ascending=False)
     interval = _get_interval(local_sensation_descending)
 
@@ -378,7 +385,7 @@ def smoothed_low_level_warm_minus_1(local_sensation, alpha) -> float:
     # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
     # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, -1) * sig(-x_i+1, alpha, 1)) *
     #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
-    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    # beta_N = 1 - [(1-beta_N-1) + (1-beta_N-2) + ... + (1-beta_2)]
     for i in range(2, len(local_sensation_descending)):
         x_i = local_sensation_descending.iloc[i]
         x_i_sum = np.mean(local_sensation_descending.iloc[:i + 1])
@@ -401,7 +408,7 @@ def smoothed_low_level_warm_minus_1(local_sensation, alpha) -> float:
 
 
 def smoothed_opposite_warm(local_sensation, alpha):
-    """Return the overall sensation calculated by opposite warm model."""
+    """Return the overall sensation calculated by internally smoothed opposite warm model."""
     sensation_level = utils.get_sensation_level(local_sensation, "warm")
     if sensation_level == "high":
         overall_sensation_bigger = high_level_warm(local_sensation[local_sensation >= 0])
@@ -416,7 +423,7 @@ def smoothed_opposite_warm(local_sensation, alpha):
 
 
 def smoothed_low_level_cold(local_sensation, alpha) -> float:
-    """Returns the overall sensation calculated by internally smoothed low level cold model."""
+    """Returns the overall sensation calculated by internally smoothed low-level cold model."""
     local_sensation_ascending = local_sensation.sort_values(ascending=True)
     interval = _get_interval(local_sensation_ascending)
 
@@ -429,7 +436,7 @@ def smoothed_low_level_cold(local_sensation, alpha) -> float:
 
     # gamma_i = sig(-x_i, alpha, 2 - interval * (i - 1))
     # beta_i = gamma_i * (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
-    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    # beta_N = 1 - [(1-beta_N-1) + (1-beta_N-2) + ... + (1-beta_2)]
     for i in range(2, len(local_sensation_ascending)):
         x_i = local_sensation_ascending.iloc[i]
         x_i_sum = np.mean(local_sensation_ascending.iloc[:i + 1])
@@ -451,7 +458,7 @@ def smoothed_low_level_cold(local_sensation, alpha) -> float:
 
 
 def smoothed_low_level_cold_0(local_sensation, alpha) -> float:
-    """Returns the overall sensation calculated by internally smoothed low level warm model."""
+    """Returns the overall sensation calculated by internally smoothed low-level warm model for bigger group (x_i < 0)."""
     local_sensation_ascending = local_sensation.sort_values(ascending=True)
     interval = _get_interval(local_sensation_ascending)
 
@@ -465,7 +472,7 @@ def smoothed_low_level_cold_0(local_sensation, alpha) -> float:
     # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
     # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, 0) * sig(-x_i+1, alpha, 0)) *
     #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
-    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    # beta_N = 1 - [(1-beta_N-1) + (1-beta_N-2) + ... + (1-beta_2)]
     for i in range(2, len(local_sensation_ascending)):
         x_i = local_sensation_ascending.iloc[i]
         x_i_sum = np.mean(local_sensation_ascending.iloc[:i + 1])
@@ -488,7 +495,7 @@ def smoothed_low_level_cold_0(local_sensation, alpha) -> float:
 
 
 def smoothed_low_level_cold_plus_1(local_sensation, alpha) -> float:
-    """Returns the overall sensation calculated by internally smoothed low level warm model."""
+    """Returns the overall sensation calculated by internally smoothed low-level warm model for extended bigger group (x_i < 1)."""
     local_sensation_ascending = local_sensation.sort_values(ascending=True)
     interval = _get_interval(local_sensation_ascending)
 
@@ -502,7 +509,7 @@ def smoothed_low_level_cold_plus_1(local_sensation, alpha) -> float:
     # gamma_i = 1 / (1 + exp(-alpha * (x_i - 2 + interval * (i - 1)))
     # beta_i = (gamma_i + (1 - gamma_i) * sig(x_i, alpha, -1) * sig(-x_i+1, alpha, 1)) *
     #          (1 - gamma_i-1) * (1 - gamma_i-2) * ... * (1 - gamma_2)
-    # beta_N = 1 - (1-beta_N-1) * (1-beta_N-2) * ... * (1-beta_2)
+    # beta_N = 1 - [(1-beta_N-1) + (1-beta_N-2) + ... + (1-beta_2)]
     for i in range(2, len(local_sensation_ascending)):
         x_i = local_sensation_ascending.iloc[i]
         x_i_sum = np.mean(local_sensation_ascending.iloc[:i + 1])
@@ -525,7 +532,7 @@ def smoothed_low_level_cold_plus_1(local_sensation, alpha) -> float:
 
 
 def smoothed_opposite_cold(local_sensation, alpha):
-    """Return the overall sensation calculated by opposite warm model."""
+    """Return the overall sensation calculated by internally smoothed opposite warm model."""
     sensation_level = utils.get_sensation_level(local_sensation, "cold")
     if sensation_level == "high":
         overall_sensation_bigger = high_level_cold(local_sensation[local_sensation <= 0])
@@ -542,6 +549,7 @@ def smoothed_opposite_cold(local_sensation, alpha):
 # ------------------------------Internally Smoothed and Modified Sensation Model------------------------------------
 
 def smoothed_modified_low_level_warm(local_sensation, alpha) -> float:
+    """Returns the overall sensation calculated by internally smoothed modified low-level warm model."""
     sensation = smoothed_low_level_warm(local_sensation, alpha)
     # sensations larger than 1 and overall sensation are considered for modifier
     threshold = max([sensation, 1])
@@ -550,17 +558,16 @@ def smoothed_modified_low_level_warm(local_sensation, alpha) -> float:
 
 
 def smoothed_modified_low_level_cold(local_sensation, alpha) -> float:
+    """Returns the overall sensation calculated by internally smoothed modified low-level cold model."""
     sensation = smoothed_low_level_cold(local_sensation, alpha)
-    # Limit sensation by dominant parts
-    sensation = min([min(local_sensation[DOMINANT_BODY_PARTS]), sensation])
     # sensations less than -1 and overall sensation are considered for modifier
     threshold = min([sensation, -1])
     modifier = _extreme_modifier(local_sensation[local_sensation < threshold], sensation)
     return sensation + modifier
 
 
-def smoothed_modified_no_opposite_model(local_sensation, bigger_group, alpha) -> float:
-    """Return the overall sensation calculated by no-opposite model."""
+def smoothed_no_opposite_model(local_sensation, bigger_group, alpha) -> float:
+    """Return the overall sensation calculated by internally smoothed no-opposite model."""
     sensation_level = utils.get_sensation_level(local_sensation, bigger_group)
     if sensation_level == "high":
         return high_level_warm(local_sensation) if bigger_group == "warm" else high_level_cold(local_sensation)
@@ -569,7 +576,8 @@ def smoothed_modified_no_opposite_model(local_sensation, bigger_group, alpha) ->
 
 
 def smoothed_modified_opposite_warm(local_sensation, alpha) -> float:
-    sensation = smoothed_modified_no_opposite_model(local_sensation.where(local_sensation >= -1, -1), 'warm', alpha)
+    """Returns the overall sensation calculated by internally smoothed modified opposite warm model."""
+    sensation = smoothed_no_opposite_model(local_sensation, 'warm', alpha)
 
     modifier_cold = _extreme_modifier(local_sensation[local_sensation < -1], sensation)
     threshold = max([sensation, 1])
@@ -578,7 +586,8 @@ def smoothed_modified_opposite_warm(local_sensation, alpha) -> float:
 
 
 def smoothed_modified_opposite_cold(local_sensation, alpha) -> float:
-    sensation = smoothed_modified_no_opposite_model(local_sensation.where(local_sensation <= 1, 1), 'cold', alpha)
+    """Returns the overall sensation calculated by internally smoothed modified opposite cold model."""
+    sensation = smoothed_no_opposite_model(local_sensation, 'cold', alpha)
 
     modifier_warm = _extreme_modifier(local_sensation[local_sensation > 1], sensation)
     threshold = min([sensation, -1])
