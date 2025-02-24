@@ -134,51 +134,52 @@ class OverallSensationCalculator:
         """A series of overall sensations for different overall sensation models."""
         sensation_model = {}
 
+        alpha = self.config.internal_smooth_alpha
         if self.config.original_model:
             if self.config.internal_smooth:
                 sensation_model = {
-                    1: models.high_level_warm,
-                    2: models.high_level_cold,
-                    3: models.smoothed_low_level_warm,
-                    4: models.smoothed_low_level_cold,
-                    5: models.opposite_dominated_cold,
-                    6: models.smoothed_opposite_warm,
-                    7: models.smoothed_opposite_cold
+                    1: models.high_level_warm(self.local_sensation),
+                    2: models.high_level_cold(self.local_sensation),
+                    3: models.smoothed_low_level_warm(self.local_sensation, alpha),
+                    4: models.smoothed_low_level_cold(self.local_sensation, alpha),
+                    5: models.opposite_dominated_cold(self.local_sensation),
+                    6: models.smoothed_opposite_warm(self.local_sensation, alpha),
+                    7: models.smoothed_opposite_cold(self.local_sensation, alpha)
                 }
             if not self.config.internal_smooth:
                 sensation_model = {
-                    1: models.high_level_warm,
-                    2: models.high_level_cold,
-                    3: models.low_level_warm,
-                    4: models.low_level_cold,
-                    5: models.opposite_dominated_cold,
-                    6: models.opposite_warm,
-                    7: models.opposite_cold
+                    1: models.high_level_warm(self.local_sensation),
+                    2: models.high_level_cold(self.local_sensation),
+                    3: models.low_level_warm(self.local_sensation),
+                    4: models.low_level_cold(self.local_sensation),
+                    5: models.opposite_dominated_cold(self.local_sensation),
+                    6: models.opposite_warm(self.local_sensation),
+                    7: models.opposite_cold(self.local_sensation)
                 }
 
         if not self.config.original_model:
             # modified models
             if self.config.internal_smooth:
                 sensation_model = {
-                    1: models.modified_high_level_warm,
-                    2: models.modified_high_level_cold,
-                    3: models.smoothed_modified_low_level_warm,
-                    4: models.smoothed_modified_low_level_cold,
-                    5: models.modified_dominated_cold,
-                    6: models.smoothed_modified_opposite_warm,
-                    7: models.smoothed_modified_opposite_cold
+                    1: models.modified_high_level_warm(self.local_sensation),
+                    2: models.modified_high_level_cold(self.local_sensation),
+                    3: models.smoothed_modified_low_level_warm(self.local_sensation, alpha),
+                    4: models.smoothed_modified_low_level_cold(self.local_sensation, alpha),
+                    5: models.modified_dominated_cold(self.local_sensation),
+                    6: models.smoothed_modified_opposite_warm(self.local_sensation, alpha),
+                    7: models.smoothed_modified_opposite_cold(self.local_sensation, alpha)
                 }
             if not self.config.internal_smooth:
                 sensation_model = {
-                    1: models.modified_high_level_warm,
-                    2: models.modified_high_level_cold,
-                    3: models.modified_low_level_warm,
-                    4: models.modified_low_level_cold,
-                    5: models.modified_dominated_cold,
-                    6: models.modified_opposite_warm,
-                    7: models.modified_opposite_cold
+                    1: models.modified_high_level_warm(self.local_sensation),
+                    2: models.modified_high_level_cold(self.local_sensation),
+                    3: models.modified_low_level_warm(self.local_sensation),
+                    4: models.modified_low_level_cold(self.local_sensation),
+                    5: models.modified_dominated_cold(self.local_sensation),
+                    6: models.modified_opposite_warm(self.local_sensation),
+                    7: models.modified_opposite_cold(self.local_sensation)
                 }
-        return {model_num: model(self.local_sensation) for model_num, model in sensation_model.items()}
+        return sensation_model
 
     def _get_overall_sensation(self):
         if not self.config.external_smooth_alpha:
