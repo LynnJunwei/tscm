@@ -3,9 +3,7 @@
 # @Time    : 2023/11/1 12:31
 # @Author  : Eric
 from typing import Optional, Literal
-
-import pandas as pd
-import numpy as np
+import warnings
 
 
 class LocalSensationConfig:
@@ -52,41 +50,62 @@ class LocalSensationConfig:
 class OverallSensationConfig:
     """
     Adjust configuration used to calculate overall sensation from local sensation. Currently, all configurations
-    are related to the smoothing method. The smooth function refers to Zhao, Y., Zhang, H., Arens, E. A., & Zhao, Q.
+    are related to the smoothing method. The external_smooth function refers to Zhao, Y., Zhang, H., Arens, E. A., & Zhao, Q.
     (2014). Thermal local_sensation_sorted and comfort models for non-uniform and transient environments, part IV:
     Adaptive neutral setpoints and smoothed whole-body local_sensation_sorted model. Building and Environment,
     72, 300–308. https://doi.org/10.1016/j.buildenv.2013.11.004
     """
     def __init__(self,
-                 smooth: bool = False,
-                 smooth_alpha: int = 5,
-                 smooth_adjusted: bool = True,
+                 external_smooth: bool = False,
+                 external_smooth_alpha: int = 5,
+                 external_smooth_adjusted: bool = False,
+                 external_smooth_simplified: bool = False,
                  internal_smooth: bool = False,
-                 model_type: Literal['origin', 'modified'] = 'origin'):
+                 internal_smooth_alpha: int = 30,
+                 original_model: bool = True):
         """
         Args:
-            smooth:
-                A boolean to control whether to use the smoothing method. Default is False.
-            smooth_alpha:
-                The value of alpha used to smooth the model. Default is 5.
-            smooth_adjusted:
-                A boolean to control whether to use the adjusted smoothing method. After adjusting, the fluctuation
-                happens in critical state could be fixed. Only work when smooth is set to True. Default is True.
-            model_type:
-                The type of overall sensation model. Default is 'origin'.
-
-                - **'origin':**
-                  The original overall sensation model.
-
-                - **'modified':**
-                  The modified overall sensation model with the smoothing method.
+            external_smooth:
+                A boolean to control whether to use the smoothing method between models. Default is False.
+            external_smooth_alpha:
+                The value of alpha used to external model smoothing. Default is 5.
+            external_smooth_adjusted:
+                A boolean to control whether to use the adjusted smoothing method between models. After adjusting,
+                the fluctuation happens in critical state could be fixed. Only work when external_smooth is set to True.
+                Default is False.
+            external_smooth_simplified:
+                A boolean to control whether to use the simplified smoothing method between models.
+                Only work when external_smooth is set to True. Default is False.
+            internal_smooth:
+                A boolean to control whether to use the internal smoothing method. Default is False.
+            internal_smooth_alpha:
+                The value of alpha used to internal model smoothing. Default is 30.
+            original_model:
+                A boolean to define whether the original model is applied. If True, the calculation will be based on
+                the original model, otherwise it will be based on the modified model. Default is True.
         """
-        self.smooth_alpha = smooth_alpha
-        self.smooth = smooth
-        self.smooth_adjusted = smooth_adjusted
-        self.internal_smooth = internal_smooth
-        self.model_type = model_type
+        self.external_smooth_alpha = external_smooth_alpha
+        self.external_smooth = external_smooth
+        self.external_smooth_adjusted= external_smooth_adjusted
+        self.external_smooth_simplified = external_smooth_simplified
 
+        self.internal_smooth = internal_smooth
+        self.internal_smooth_alpha = internal_smooth_alpha
+
+        self.original_model = original_model
+
+        if (not self.external_smooth) and self.external_smooth_adjusted:
+            warnings.warn('The external_smooth_adjusted is only available when external_smooth is set to True.',
+                          RuntimeWarning)
+            self.external_smooth_adjusted = False
+        if (not self.external_smooth) and self.external_smooth_simplified:
+            warnings.warn('The external_smooth_simplified is only available when external_smooth is set to True.',
+                          RuntimeWarning)
+            self.external_smooth_simplified = False
+        if self.original_model and self.external_smooth_simplified:
+            warnings.warn('The external_smooth_simplified is only available when modified models are used.',
+                              RuntimeWarning)
+            self.external_smooth_simplified = False
 
 class HumanConfig:
     """Adjust physiological features of human object."""
