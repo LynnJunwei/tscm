@@ -185,20 +185,32 @@ class OverallSensationCalculator:
         if not self.config.external_smooth_alpha:
             return self.overall_sensations_dict[self.model_num]
 
-        def sig(x, a, t):
-            return 1 / (1 + np.exp(-a * (x - t)))
-
-        x1 = min(self.local_sensation[DOMINANT_BODY_PARTS])
-        x2 = self.local_sensation.sort_values(ascending=False).iloc[0]
-        x3 = self.local_sensation.sort_values(ascending=True).iloc[0]
-        x4 = self.local_sensation.sort_values(ascending=False).iloc[1 if not self.are_hands_feet_warmest else 2]
-        x5 = self.local_sensation.sort_values(ascending=True).iloc[1 if not self.are_hands_feet_coldest else 2]
-        x6 = self.local_sensation.median()
 
         y_dict = self.overall_sensations_dict
         y_i = y_dict[self.model_num]
-        alpha = self.config.external_smooth_alpha
 
+        y_k_dict = self._get_y_k_dict(y_dict)
+        w_ik_dict = self._get_w_ik_dict()
+
+        y_k = y_k_dict[self.model_num]
+        w_ik = w_ik_dict[self.model_num]
+
+        y_ik = [y - y_i for y in y_k]
+        w_y_ik = [float(w * y) for w, y in zip(w_ik, y_ik)]
+
+        if not self.config.external_smooth_adjusted:
+            return y_i + np.sum(w_y_ik)
+
+        w_y_ik_max_index = np.argmax(np.abs(w_y_ik))
+        y_i_modified = y_i + w_y_ik[w_y_ik_max_index]
+        y_ik_modified = [y_k[i] - y_i if i == w_y_ik_max_index else y_k[i] - y_i_modified for i in range(len(y_k))]
+        w_y_ik_modified = [float(w * y) for w, y in zip(w_ik, y_ik_modified)]
+
+        return y_i + np.sum(w_y_ik_modified)
+
+
+    def _get_y_k_dict(self, y_dict) -> dict:
+        # for original and modified models
         y_k_dict = {
             1: [y_dict[i] for i in [3, 5, 6, 7]],
             2: [y_dict[i] for i in [4, 5, 6, 7]],
@@ -209,6 +221,30 @@ class OverallSensationCalculator:
             7: [y_dict[i] for i in [1, 2, 3, 4, 5, 6]]
         }
 
+        if self.config.external_smooth_simplified:
+            y_k_dict = {
+                1: [y_dict[i] for i in [3, 5, 7]],
+                2: [y_dict[i] for i in [4, 6]],
+                3: [y_dict[i] for i in [1, 4, 5, 7]],
+                4: [y_dict[i] for i in [2, 3, 6]],
+                5: [y_dict[i] for i in [1, 3, 6]],
+                6: [y_dict[i] for i in [2, 4, 5, 7]],
+                7: [y_dict[i] for i in [1, 3, 6]]
+            }
+        return y_k_dict
+
+    def _get_w_ik_dict(self) -> dict:
+        def sig(x, a, t):
+            return 1 / (1 + np.exp(-a * (x - t)))
+        alpha = self.config.external_smooth_alpha
+
+        x1 = min(self.local_sensation[DOMINANT_BODY_PARTS])
+        x2 = self.local_sensation.sort_values(ascending=False).iloc[0]
+        x3 = self.local_sensation.sort_values(ascending=True).iloc[0]
+        x4 = self.local_sensation.sort_values(ascending=False).iloc[1 if not self.are_hands_feet_warmest else 2]
+        x5 = self.local_sensation.sort_values(ascending=True).iloc[1 if not self.are_hands_feet_coldest else 2]
+        x6 = self.local_sensation.median()
+
         w_ik_dict = {
             1: [
                 sig(-x4, alpha, -2),
@@ -218,7 +254,7 @@ class OverallSensationCalculator:
             ],
             2: [
                 sig(x5, alpha, -2),
-                sig(-x1, alpha, 1) * sig(x2, alpha, 0) * sig(x6, alpha, 0),
+                sig(-x1, alpha, 1) * sig(x2, alpha, 0),
                 sig(x6, alpha, 0) * sig(x1, alpha, -1),
                 sig(x2, alpha, 1) * sig(x1, alpha, -1),
             ],
@@ -232,8 +268,8 @@ class OverallSensationCalculator:
             4: [
                 sig(-x5, alpha, 2),
                 sig(x6, alpha, 0) * sig(x3, alpha, -1),
-                sig(-x1, alpha, 1) * sig(x2, alpha, 0) * sig(x6, alpha, 0),
-                sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, -1),
+                sig(-x1, alpha, 1) * sig(x2, alpha, 0),
+                sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),
                 sig(x2, alpha, 1) * sig(x1, alpha, -1),
             ],
             5: [
@@ -262,24 +298,103 @@ class OverallSensationCalculator:
             ]
         }
 
-        y_k = y_k_dict[self.model_num]
-        w_ik = w_ik_dict[self.model_num]
+        if (not self.config.original_model) and (not self.config.external_smooth_simplified):
+            w_ik_dict = {
+                1: [
+                    sig(-x4, alpha, -2),
+                    sig(-x1, alpha, 1),
+                    sig(x1, alpha, -1) * sig(-x3, alpha, 1),
+                    sig(-x6, alpha, 0),
+                ],
+                2: [
+                    sig(x5, alpha, -2),
+                    sig(-x1, alpha, 1),
+                    sig(x6, alpha, 0),
+                    sig(x2, alpha, 1),
+                ],
+                3: [
+                    sig(x4, alpha, 2),
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1),
+                    sig(-x1, alpha, 1),
+                    sig(x1, alpha, -1) * sig(-x3, alpha, 1),
+                    sig(-x6, alpha, 0) * sig(x2, alpha, 1),
+                ],
+                4: [
+                    sig(-x5, alpha, 2),
+                    sig(x6, alpha, 0) * sig(x3, alpha, -1),
+                    sig(-x1, alpha, 1),
+                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),
+                    sig(x2, alpha, 1),
+                ],
+                5: [
+                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(x1, alpha, -1),
+                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(x1, alpha, -1),
+                    sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),
+                    sig(-x6, alpha, 0) * sig(x1, alpha, -1) * sig(x2, alpha, 1),
+                ],
+                6: [
+                    sig(x4, alpha, 2) * sig(x3, alpha, -1),
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(x1, alpha, -1),
+                    sig(-x4, alpha, -2) * sig(x3, alpha, -1),
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2),
+                    sig(-x1, alpha, 1),
+                    sig(-x6, alpha, 0) * sig(x2, alpha, 1) * sig(x1, alpha, -1),
+                ],
+                7: [
+                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),
+                    sig(-x2, alpha, -1) * sig(-x5, alpha, 2),
+                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
+                    sig(-x2, alpha, -1),
+                    sig(-x1, alpha, 1),
+                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),
+                ]
+            }
 
-        y_ik = [y - y_i for y in y_k]
-        w_y_ik = [float(w * y) for w, y in zip(w_ik, y_ik)]
+        if (not self.config.original_model) and self.config.external_smooth_simplified:
+            w_ik_dict = {
+                1: [
+                    sig(-x4, alpha, -2),
+                    sig(-x1, alpha, 1),
+                    sig(-x6, alpha, 0),
+                ],
+                2: [
+                    sig(x5, alpha, -2),
+                    sig(x6, alpha, 0),
+                ],
+                3: [
+                    sig(x4, alpha, 2),
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1),
+                    sig(-x1, alpha, 1),
+                    sig(-x6, alpha, 0) * sig(x2, alpha, 1),
+                ],
+                4: [
+                    sig(-x5, alpha, 2),
+                    sig(x6, alpha, 0) * sig(x3, alpha, -1),
+                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),
+                ],
+                5: [
+                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),
+                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
+                    sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),
+                ],
+                6: [
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2),
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2),
+                    sig(-x1, alpha, 1),
+                    sig(-x6, alpha, 0) * sig(x2, alpha, 1),
+                ],
+                7: [
+                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),
+                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
+                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),
+                ]
+            }
 
-        if not self.config.external_smooth_adjusted:
-            return y_i + np.sum(w_y_ik)
+        return w_ik_dict
 
-        w_y_ik_max_index = np.argmax(np.abs(w_y_ik))
-        # print(w_y_ik)
-        # print(w_ik)
-        y_i_modified = y_i + w_y_ik[w_y_ik_max_index]
-        y_ik_modified = [y_k[i] - y_i if i == w_y_ik_max_index else y_k[i] - y_i_modified for i in range(len(y_k))]
-        w_y_ik_modified = [float(w * y) for w, y in zip(w_ik, y_ik_modified)]
-        # print(w_y_ik_modified)
 
-        return y_i + np.sum(w_y_ik_modified)
 
     @property
     def overall_sensation(self) -> float:

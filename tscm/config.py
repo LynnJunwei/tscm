@@ -3,9 +3,7 @@
 # @Time    : 2023/11/1 12:31
 # @Author  : Eric
 from typing import Optional, Literal
-
-import pandas as pd
-import numpy as np
+import warnings
 
 
 class LocalSensationConfig:
@@ -60,7 +58,8 @@ class OverallSensationConfig:
     def __init__(self,
                  external_smooth: bool = False,
                  external_smooth_alpha: int = 5,
-                 external_smooth_adjusted: bool = True,
+                 external_smooth_adjusted: bool = False,
+                 external_smooth_simplified: bool = False,
                  internal_smooth: bool = False,
                  internal_smooth_alpha: int = 30,
                  original_model: bool = True):
@@ -73,7 +72,10 @@ class OverallSensationConfig:
             external_smooth_adjusted:
                 A boolean to control whether to use the adjusted smoothing method between models. After adjusting,
                 the fluctuation happens in critical state could be fixed. Only work when external_smooth is set to True.
-                Default is True.
+                Default is False.
+            external_smooth_simplified:
+                A boolean to control whether to use the simplified smoothing method between models.
+                Only work when external_smooth is set to True. Default is False.
             internal_smooth:
                 A boolean to control whether to use the internal smoothing method. Default is False.
             internal_smooth_alpha:
@@ -85,10 +87,25 @@ class OverallSensationConfig:
         self.external_smooth_alpha = external_smooth_alpha
         self.external_smooth = external_smooth
         self.external_smooth_adjusted= external_smooth_adjusted
+        self.external_smooth_simplified = external_smooth_simplified
+
         self.internal_smooth = internal_smooth
         self.internal_smooth_alpha = internal_smooth_alpha
+
         self.original_model = original_model
 
+        if (not self.external_smooth) and self.external_smooth_adjusted:
+            warnings.warn('The external_smooth_adjusted is only available when external_smooth is set to True.',
+                          RuntimeWarning)
+            self.external_smooth_adjusted = False
+        if (not self.external_smooth) and self.external_smooth_simplified:
+            warnings.warn('The external_smooth_simplified is only available when external_smooth is set to True.',
+                          RuntimeWarning)
+            self.external_smooth_simplified = False
+        if self.original_model and self.external_smooth_simplified:
+            warnings.warn('The external_smooth_simplified is only available when modified models are used.',
+                              RuntimeWarning)
+            self.external_smooth_simplified = False
 
 class HumanConfig:
     """Adjust physiological features of human object."""
