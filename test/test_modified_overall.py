@@ -29,9 +29,9 @@ if __name__ == '__main__':
     overall_sensation_config_origin = OverallSensationConfig(external_smooth=False, original_model=True,
                                                              external_smooth_adjusted=True,
                                                              internal_smooth=False)
-    overall_sensation_config_modified = OverallSensationConfig(external_smooth=False, original_model=False,
+    overall_sensation_config_modified = OverallSensationConfig(external_smooth=True, original_model=False,
                                                                external_smooth_adjusted=True,
-                                                               external_smooth_alpha=15,
+                                                               external_smooth_alpha=5,
                                                                external_smooth_simplified=True,
                                                                internal_smooth=True)
 
