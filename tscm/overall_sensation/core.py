@@ -182,7 +182,7 @@ class OverallSensationCalculator:
         return sensation_model
 
     def _get_overall_sensation(self):
-        if not self.config.external_smooth_alpha:
+        if not self.config.external_smooth:
             return self.overall_sensations_dict[self.model_num]
 
 
