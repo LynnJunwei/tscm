@@ -23,12 +23,17 @@ def get_whole_ts(local_ts_df, overall_sensation_config):
 
 
 if __name__ == '__main__':
-    local_ts_df = pd.read_csv('test_case/TSV_7-5-6_1.csv', index_col=0)
+    local_ts_df = pd.read_csv('test_case/TSV_1-5-1.csv', index_col=0)
 
     human_config = HumanConfig(sex='male', met=1, clo=0.5)
-    overall_sensation_config_origin = OverallSensationConfig(smooth=False, model_type='origin', internal_smooth=False)
-    overall_sensation_config_modified = OverallSensationConfig(smooth=False, model_type='modified',
-                                                               smooth_adjusted=True, smooth_alpha=10, internal_smooth=False)
+    overall_sensation_config_origin = OverallSensationConfig(external_smooth=False, original_model=True,
+                                                             external_smooth_adjusted=True,
+                                                             internal_smooth=False)
+    overall_sensation_config_modified = OverallSensationConfig(external_smooth=False, original_model=False,
+                                                               external_smooth_adjusted=True,
+                                                               external_smooth_alpha=15,
+                                                               external_smooth_simplified=True,
+                                                               internal_smooth=True)
 
     whole_ts_origin, model_num = get_whole_ts(local_ts_df, overall_sensation_config_origin)
     whole_ts_modified, _ = get_whole_ts(local_ts_df, overall_sensation_config_modified)
