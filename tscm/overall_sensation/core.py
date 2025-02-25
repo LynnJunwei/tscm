@@ -194,6 +194,7 @@ class OverallSensationCalculator:
 
         y_k = y_k_dict[self.model_num]
         w_ik = w_ik_dict[self.model_num]
+        print(w_ik)
 
         y_ik = [y - y_i for y in y_k]
         w_y_ik = [float(w * y) for w, y in zip(w_ik, y_ik)]
