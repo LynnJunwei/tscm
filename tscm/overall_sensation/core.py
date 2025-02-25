@@ -201,7 +201,7 @@ class OverallSensationCalculator:
         if not self.config.external_smooth_adjusted:
             return y_i + np.sum(w_y_ik)
 
-        w_y_ik_max_index = np.argmax(np.abs(w_y_ik))
+        w_y_ik_max_index = np.argmax(np.abs(w_ik))
         y_i_modified = y_i + w_y_ik[w_y_ik_max_index]
         y_ik_modified = [y_k[i] - y_i if i == w_y_ik_max_index else y_k[i] - y_i_modified for i in range(len(y_k))]
         w_y_ik_modified = [float(w * y) for w, y in zip(w_ik, y_ik_modified)]
