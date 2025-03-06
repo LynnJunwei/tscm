@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/7/19
+# @Time    : 2025/3/4
 # @Author  : Eric
 import pandas as pd
 import seaborn as sns
@@ -23,21 +23,23 @@ def get_whole_ts(local_ts_df, overall_sensation_config):
 
 
 if __name__ == '__main__':
-    local_ts_df = pd.read_csv('test_case/TSV_7-5-6_1.csv', index_col=0)
+    local_ts_df = pd.read_excel('test_case/model 5-7.xlsx', index_col=0, sheet_name='Sheet1')
 
     human_config = HumanConfig(sex='male', met=1, clo=0.5)
     overall_sensation_config_origin = OverallSensationConfig(external_smooth=True, original_model=True,
                                                              external_smooth_adjusted=True,
+                                                             external_smooth_alpha=15,
                                                              internal_smooth=False)
     overall_sensation_config_modified = OverallSensationConfig(external_smooth=True, original_model=False,
                                                                external_smooth_adjusted=True,
-                                                               external_smooth_alpha=10,
-                                                               external_smooth_simplified=True,
-                                                               internal_smooth=True)
+                                                               external_smooth_alpha=15,
+                                                               external_smooth_simplified=False,
+                                                               internal_smooth=False)
 
     whole_ts_origin, model_num = get_whole_ts(local_ts_df, overall_sensation_config_origin)
     whole_ts_modified, _ = get_whole_ts(local_ts_df, overall_sensation_config_modified)
     whole_ts_df = pd.concat([whole_ts_origin, whole_ts_modified], axis=1, keys=['origin', 'modified'])
+    whole_ts_df.to_csv('test_case/model 5-7 smoothed.csv')
 
     plt.figure(layout='constrained')
     sns.lineplot(whole_ts_df, lw=3)
@@ -46,6 +48,4 @@ if __name__ == '__main__':
     plt.show()
 
     sns.lineplot(model_num, lw=3)
-    plt.show()
-
-
+    # plt.show()
