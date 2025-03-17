@@ -108,7 +108,7 @@ class TSCMObject:
         pool = mp.Pool(num_cores)
         q = mp.Manager().Queue()
         tasks = []
-        for i in self.skin_temperature.index:
+        for i in self.index:
             task = pool.apply_async(self.sub_run, args=(i, q,))
             tasks.append(task)
         for task in tasks:
