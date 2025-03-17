@@ -227,9 +227,9 @@ class OverallSensationCalculator:
                 2: [y_dict[i] for i in [4, 6]],
                 3: [y_dict[i] for i in [1, 4, 5, 7]],
                 4: [y_dict[i] for i in [2, 3, 6]],
-                5: [y_dict[i] for i in [1, 3, 6]],
+                5: [y_dict[i] for i in [1, 3, 6, 7]],
                 6: [y_dict[i] for i in [2, 4, 5, 7]],
-                7: [y_dict[i] for i in [1, 3, 6]]
+                7: [y_dict[i] for i in [1, 3, 5, 6]]
             }
         return y_k_dict
 
@@ -378,6 +378,7 @@ class OverallSensationCalculator:
                     sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
                     sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
                     sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),  # 6
+                    sig(-x6, alpha, 0) * sig(x1, alpha, -1) * sig(x2, alpha, 1),  # 7
                 ],
                 6: [
                     sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2),  # 2
@@ -388,6 +389,7 @@ class OverallSensationCalculator:
                 7: [
                     sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
                     sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                    sig(-x1, alpha, 1),  # 5
                     sig(x6, alpha, 0) * sig(-x3, alpha, 1),  # 6
                 ]
             }
