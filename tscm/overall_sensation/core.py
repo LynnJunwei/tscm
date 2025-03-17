@@ -194,7 +194,6 @@ class OverallSensationCalculator:
 
         y_k = y_k_dict[self.model_num]
         w_ik = w_ik_dict[self.model_num]
-        print(w_ik)
 
         y_ik = [y - y_i for y in y_k]
         w_y_ik = [float(w * y) for w, y in zip(w_ik, y_ik)]
@@ -202,7 +201,7 @@ class OverallSensationCalculator:
         if not self.config.external_smooth_adjusted:
             return y_i + np.sum(w_y_ik)
 
-        w_y_ik_max_index = np.argmax(np.abs(w_y_ik))
+        w_y_ik_max_index = np.argmax(np.abs(w_ik))
         y_i_modified = y_i + w_y_ik[w_y_ik_max_index]
         y_ik_modified = [y_k[i] - y_i if i == w_y_ik_max_index else y_k[i] - y_i_modified for i in range(len(y_k))]
         w_y_ik_modified = [float(w * y) for w, y in zip(w_ik, y_ik_modified)]
@@ -228,9 +227,9 @@ class OverallSensationCalculator:
                 2: [y_dict[i] for i in [4, 6]],
                 3: [y_dict[i] for i in [1, 4, 5, 7]],
                 4: [y_dict[i] for i in [2, 3, 6]],
-                5: [y_dict[i] for i in [1, 3, 6]],
+                5: [y_dict[i] for i in [1, 3, 6, 7]],
                 6: [y_dict[i] for i in [2, 4, 5, 7]],
-                7: [y_dict[i] for i in [1, 3, 6]]
+                7: [y_dict[i] for i in [1, 3, 5, 6]]
             }
         return y_k_dict
 
@@ -267,129 +266,131 @@ class OverallSensationCalculator:
                 sig(-x6, alpha, 0) * sig(x2, alpha, 1),  # 7
             ],
             4: [
-                sig(-x5, alpha, 2),
-                sig(x6, alpha, 0) * sig(x3, alpha, -1),
-                sig(-x1, alpha, 1) * sig(x2, alpha, 0),
-                sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),
-                sig(x2, alpha, 1) * sig(x1, alpha, -1),
+                sig(-x5, alpha, 2),  # 2
+                sig(x6, alpha, 0) * sig(x3, alpha, -1),  # 3
+                sig(-x1, alpha, 1) * sig(x2, alpha, 0),  # 5
+                sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),  # 6
+                sig(x2, alpha, 1) * sig(x1, alpha, -1),  # 7
             ],
             5: [
-                sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),
-                sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(x1, alpha, -1),
-                sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
-                sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(x1, alpha, -1),
-                sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),
-                sig(-x6, alpha, 0) * sig(x1, alpha, -1) * sig(x2, alpha, 1),
+                sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
+                sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(x1, alpha, -1),  # 2
+                sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(x1, alpha, -1),  # 4
+                sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),  # 6
+                sig(-x6, alpha, 0) * sig(x1, alpha, -1) * sig(x2, alpha, 1),  # 7
             ],
             6: [
-                sig(x4, alpha, 2) * sig(x3, alpha, -1),
-                sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2),
-                sig(-x4, alpha, -2) * sig(x3, alpha, -1),
-                sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2),
-                sig(-x1, alpha, 1),
-                sig(-x6, alpha, 0) * sig(x2, alpha, 1),
+                sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
+                sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2),  # 2
+                sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2),  # 4
+                sig(-x1, alpha, 1),  # 5
+                sig(-x6, alpha, 0) * sig(x2, alpha, 1),  # 7
             ],
             7: [
-                sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),
-                sig(-x2, alpha, -1) * sig(-x5, alpha, 2),
-                sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
-                sig(-x2, alpha, -1) * sig(x5, alpha, -2),
-                sig(-x1, alpha, 1),
-                sig(x6, alpha, 0) * sig(-x3, alpha, 1),
+                sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
+                sig(-x2, alpha, -1) * sig(-x5, alpha, 2),  # 2
+                sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                sig(-x2, alpha, -1) * sig(x5, alpha, -2),  # 4
+                sig(-x1, alpha, 1),  # 5
+                sig(x6, alpha, 0) * sig(-x3, alpha, 1),  # 6
             ]
         }
 
         if (not self.config.original_model) and (not self.config.external_smooth_simplified):
             w_ik_dict = {
                 1: [
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(-x4, alpha, -2) * sig(x6, alpha, 0),  # 3
+                    sig(-x4, alpha, -2),  # 3
                     sig(-x1, alpha, 1),  # 5
-                    sig(x1, alpha, -1) * sig(-x3, alpha, 1) * sig(x6, alpha, 0),  # 6
-                    sig(x1, alpha, -1) * sig(x2, alpha, 1) * sig(-x6, alpha, 0),  # 7
+                    sig(x1, alpha, -1) * sig(-x3, alpha, 1),  # 6
+                    sig(-x6, alpha, 0),  # 7
                 ],
                 2: [
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(-x6, alpha, 0),  # 4
+                    sig(x5, alpha, -2),  # 4
                     sig(-x1, alpha, 1),  # 5
-                    sig(x1, alpha, -1) * sig(-x3, alpha, 1) * sig(x6, alpha, 0),  # 6
-                    sig(x1, alpha, -1) * sig(x2, alpha, 1) * sig(-x6, alpha, 0),  # 7
+                    sig(x6, alpha, 0),  # 6
+                    sig(x2, alpha, 1),  # 7
                 ],
                 3: [
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(x4, alpha, 2) * sig(x6, alpha, 0),  # 1
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(-x6, alpha, 0),  # 4
+                    sig(x4, alpha, 2),  # 1
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1),  # 4
                     sig(-x1, alpha, 1),  # 5
-                    sig(x1, alpha, -1) * sig(-x3, alpha, 1) * sig(x6, alpha, 0),  # 6
-                    sig(x1, alpha, -1) * sig(x2, alpha, 1) * sig(-x6, alpha, 0),  # 7
+                    sig(x1, alpha, -1) * sig(-x3, alpha, 1),  # 6
+                    sig(-x6, alpha, 0) * sig(x2, alpha, 1),  # 7
                 ],
                 4: [
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(-x6, alpha, 0),  # 2
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(-x4, alpha, -2) * sig(x6, alpha, 0),  # 3
+                    sig(-x5, alpha, 2),  # 2
+                    sig(x6, alpha, 0) * sig(x3, alpha, -1),  # 3
                     sig(-x1, alpha, 1),  # 5
-                    sig(x1, alpha, -1) * sig(-x3, alpha, 1) * sig(x6, alpha, 0),  # 6
-                    sig(x1, alpha, -1) * sig(x2, alpha, 1) * sig(-x6, alpha, 0),  # 7
+                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),  # 6
+                    sig(x2, alpha, 1),  # 7
                 ],
                 5: [
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(x4, alpha, 2) * sig(x6, alpha, 0),  # 1
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(-x6, alpha, 0),  # 2
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(-x4, alpha, -2) * sig(x6, alpha, 0),  # 3
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(-x6, alpha, 0),  # 4
-                    sig(x1, alpha, -1) * sig(-x3, alpha, 1) * sig(x6, alpha, 0),  # 6
-                    sig(x1, alpha, -1) * sig(x2, alpha, 1) * sig(-x6, alpha, 0),  # 7
+                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(x1, alpha, -1),  # 2
+                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(x1, alpha, -1),  # 4
+                    sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),  # 6
+                    sig(-x6, alpha, 0) * sig(x1, alpha, -1) * sig(x2, alpha, 1),  # 7
                 ],
                 6: [
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(x4, alpha, 2) * sig(x6, alpha, 0),  # 1
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(-x6, alpha, 0),  # 2
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(-x4, alpha, -2) * sig(x6, alpha, 0),  # 3
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(-x6, alpha, 0),  # 4
+                    sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(x1, alpha, -1),  # 2
+                    sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2),  # 4
                     sig(-x1, alpha, 1),  # 5
-                    sig(x1, alpha, -1) * sig(x2, alpha, 1) * sig(-x6, alpha, 0),  # 7
+                    sig(-x6, alpha, 0) * sig(x2, alpha, 1) * sig(x1, alpha, -1),  # 7
                 ],
                 7: [
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(x4, alpha, 2) * sig(x6, alpha, 0),  # 1
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2) * sig(-x6, alpha, 0),  # 2
-                    sig(x1, alpha, -1) * sig(x3, alpha, -1) * sig(-x4, alpha, -2) * sig(x6, alpha, 0),  # 3
-                    sig(x1, alpha, -1) * sig(-x2, alpha, -1) * sig(x5, alpha, -2) * sig(-x6, alpha, 0),  # 4
+                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
+                    sig(-x2, alpha, -1) * sig(-x5, alpha, 2),  # 2
+                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                    sig(-x2, alpha, -1),  # 4
                     sig(-x1, alpha, 1),  # 5
-                    sig(x1, alpha, -1) * sig(-x3, alpha, 1) * sig(x6, alpha, 0),  # 6
+                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),  # 6
                 ]
             }
 
         if (not self.config.original_model) and self.config.external_smooth_simplified:
             w_ik_dict = {
                 1: [
-                    sig(-x4, alpha, -2),
-                    sig(-x1, alpha, 1),
-                    sig(-x6, alpha, 0),
+                    sig(-x4, alpha, -2),  # 3
+                    sig(-x1, alpha, 1),  # 5
+                    sig(-x6, alpha, 0),  # 7
                 ],
                 2: [
-                    sig(x5, alpha, -2),
-                    sig(x6, alpha, 0),
+                    sig(x5, alpha, -2),  # 4
+                    sig(x6, alpha, 0),  # 6
                 ],
                 3: [
-                    sig(x4, alpha, 2),
-                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1),
-                    sig(-x1, alpha, 1),
-                    sig(-x6, alpha, 0) * sig(x2, alpha, 1),
+                    sig(x4, alpha, 2),  # 1
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1),  # 4
+                    sig(-x1, alpha, 1),  # 5
+                    sig(-x6, alpha, 0) * sig(x2, alpha, 1),  # 7
                 ],
                 4: [
-                    sig(-x5, alpha, 2),
-                    sig(x6, alpha, 0) * sig(x3, alpha, -1),
-                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),
+                    sig(-x5, alpha, 2),  # 2
+                    sig(x6, alpha, 0) * sig(x3, alpha, -1),  # 3
+                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),  # 6
                 ],
                 5: [
-                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),
-                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
-                    sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),
+                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
+                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                    sig(x6, alpha, 0) * sig(x1, alpha, -1) * sig(-x3, alpha, 1),  # 6
+                    sig(-x6, alpha, 0) * sig(x1, alpha, -1) * sig(x2, alpha, 1),  # 7
                 ],
                 6: [
-                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2),
-                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2),
-                    sig(-x1, alpha, 1),
-                    sig(-x6, alpha, 0) * sig(x2, alpha, 1),
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(-x5, alpha, 2),  # 2
+                    sig(-x6, alpha, 0) * sig(-x2, alpha, -1) * sig(x5, alpha, -2),  # 4
+                    sig(-x1, alpha, 1),  # 5
+                    sig(-x6, alpha, 0) * sig(x2, alpha, 1),  # 7
                 ],
                 7: [
-                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),
-                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),
-                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),
+                    sig(x6, alpha, 0) * sig(x4, alpha, 2) * sig(x3, alpha, -1),  # 1
+                    sig(x6, alpha, 0) * sig(-x4, alpha, -2) * sig(x3, alpha, -1),  # 3
+                    sig(-x1, alpha, 1),  # 5
+                    sig(x6, alpha, 0) * sig(-x3, alpha, 1),  # 6
                 ]
             }
 

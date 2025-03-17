@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/9/28 18:45
 # @Author  : Eric
-from typing import Optional
+from typing import Optional, Literal
 import multiprocessing as mp
 import warnings
 
@@ -25,12 +25,15 @@ class TSCMObject:
         model_num:
             A series of model numbers.
     """
-    def __init__(self, skin_temperature: pd.DataFrame,
+    def __init__(self,
+                 skin_temperature: Optional[pd.DataFrame] = None,
                  delta_skin_temperature: Optional[pd.DataFrame] = None,
                  delta_core_temperature: Optional[pd.Series] = None,
+                 local_sensation: Optional[pd.DataFrame] = None,
                  human_config: HumanConfig = HumanConfig(),
                  local_sensation_config: LocalSensationConfig = LocalSensationConfig(),
-                 overall_sensation_config: OverallSensationConfig = OverallSensationConfig()):
+                 overall_sensation_config: OverallSensationConfig = OverallSensationConfig(),
+                 output: Literal['all', 'ls', 'os'] = 'all'):
         """
         Args:
             skin_temperature:
@@ -57,9 +60,41 @@ class TSCMObject:
         self.delta_skin_temperature = delta_skin_temperature
         self.delta_core_temperature = delta_core_temperature
 
-        self.local_sensation = None
+        self.local_sensation = local_sensation
         self.overall_sensation = None
         self.model_num = None
+
+        # output
+        self.output = output
+        self._input = None
+        if self.skin_temperature is None and self.local_sensation is None:
+            raise ValueError('No input of skin temperature data or local sensation data.')
+        if self.skin_temperature is None and self.output == 'ls':
+            raise ValueError('No input of skin temperature data.')
+
+        if self.skin_temperature is None and self.local_sensation is not None:
+            self.index = self.local_sensation.index
+            self.input = 'ls'
+        elif self.skin_temperature is not None and self.local_sensation is None:
+            self.index = self.skin_temperature.index
+            self.local_sensation = pd.DataFrame().reindex_like(self.skin_temperature)
+            self.input = 'tsk'
+        elif self.skin_temperature is not None and self.local_sensation is not None:
+            warnings.warn('Both skin temperature and local sensation are input.'
+                          'Follow-up calculation will be based on local sensation data.', RuntimeWarning)
+            self.index = self.local_sensation.index
+            self.input = 'ls'
+
+        self.overall_sensation = pd.Series(index=self.index)
+        self.model_num = pd.Series(index=self.index)
+
+        # dynamic
+        if self.local_sensation_config.dynamic:
+            if self.delta_core_temperature is None or self.delta_skin_temperature is None:
+                self.local_sensation_config.dynamic = False
+                warnings.warn('No input of delta core/skin temperature.'
+                              'Dynamic influence on local sensations will not be calculated', RuntimeWarning)
+
 
     def run(self, num_cores: int = 2):
         """
@@ -70,27 +105,17 @@ class TSCMObject:
             num_cores:
                 Number of cpu cores used to run calculation. Default is 2.
         """
-        if self.local_sensation_config.dynamic:
-            if self.delta_core_temperature is None or self.delta_skin_temperature is None:
-                self.local_sensation_config.dynamic = False
-                warnings.warn('No input of delta core/skin temperature.'
-                              'Dynamic local_sensation_sorted will not be calculated', RuntimeWarning)
-
-        self.local_sensation = pd.DataFrame().reindex_like(self.skin_temperature)
-        self.overall_sensation = pd.Series(index=self.skin_temperature.index)
-        self.model_num = pd.Series(index=self.skin_temperature.index)
-
         pool = mp.Pool(num_cores)
         q = mp.Manager().Queue()
         tasks = []
         for i in self.skin_temperature.index:
-            t = pool.apply_async(self.sub_run, args=(i, q,))
-            tasks.append(t)
-        for t in tasks:
-            t.get()  # raise error caused by subprocess
+            task = pool.apply_async(self.sub_run, args=(i, q,))
+            tasks.append(task)
+        for task in tasks:
+            task.get()  # raise error caused by subprocess
         pool.close()
         pool.join()
-        for _ in self.skin_temperature.index:
+        for _ in self.index:
             i, local_sensation_i, overall_sensation_i, model_num_i = q.get()
             self.local_sensation.loc[i, :] = local_sensation_i
             self.overall_sensation.loc[i] = overall_sensation_i
@@ -116,16 +141,46 @@ class TSCMObject:
         else:  # static local_sensation_sorted
             delta_skin_temperature_, delta_core_temperature_ = [None] * 2
 
-        local_sensation_ = LocalSensationCalculator(skin_temperature=self.skin_temperature.loc[i, :],
-                                                    delta_skin_temperature=delta_skin_temperature_,
-                                                    delta_core_temperature=delta_core_temperature_,
-                                                    human_config=self.human_config,
-                                                    local_sensation_config=self.local_sensation_config
-                                                    ).get_local_sensation()
+        if self.output == 'ls':
+            local_sensation_model = LocalSensationCalculator(skin_temperature=self.skin_temperature.loc[i, :],
+                                                             delta_skin_temperature=delta_skin_temperature_,
+                                                             delta_core_temperature=delta_core_temperature_,
+                                                             human_config=self.human_config,
+                                                             local_sensation_config=self.local_sensation_config)
+            local_sensation_i = local_sensation_model.local_sensation
+            model_num_i = None
+            overall_sensation_i = None
 
-        overall_sensation_model = OverallSensationCalculator(local_sensation=local_sensation_,
+        elif self.output == 'os':
+            if self.input == 'tsk':
+                local_sensation_model = LocalSensationCalculator(skin_temperature=self.skin_temperature.loc[i, :],
+                                                                 delta_skin_temperature=delta_skin_temperature_,
+                                                                 delta_core_temperature=delta_core_temperature_,
+                                                                 human_config=self.human_config,
+                                                                 local_sensation_config=self.local_sensation_config)
+                local_sensation_i = local_sensation_model.local_sensation
+            else:
+                local_sensation_i = self.local_sensation.loc[i, :]
+
+            overall_sensation_model = OverallSensationCalculator(local_sensation=local_sensation_i,
                                                              overall_sensation_config=self.overall_sensation_config)
-        model_num_i = overall_sensation_model.model_num
-        overall_sensation_ = overall_sensation_model.overall_sensation
+            model_num_i = overall_sensation_model.model_num
+            overall_sensation_i = overall_sensation_model.overall_sensation
 
-        q.put((i, local_sensation_, overall_sensation_, model_num_i))
+        else:  # elif self.output == 'all':
+            if self.input == 'tsk':
+                local_sensation_model = LocalSensationCalculator(skin_temperature=self.skin_temperature.loc[i, :],
+                                                                 delta_skin_temperature=delta_skin_temperature_,
+                                                                 delta_core_temperature=delta_core_temperature_,
+                                                                 human_config=self.human_config,
+                                                                 local_sensation_config=self.local_sensation_config)
+                local_sensation_i = local_sensation_model.local_sensation
+            else:
+                local_sensation_i = self.local_sensation.loc[i, :]
+
+            overall_sensation_model = OverallSensationCalculator(local_sensation=local_sensation_i,
+                                                             overall_sensation_config=self.overall_sensation_config)
+            model_num_i = overall_sensation_model.model_num
+            overall_sensation_i = overall_sensation_model.overall_sensation
+
+        q.put((i, local_sensation_i, overall_sensation_i, model_num_i))
