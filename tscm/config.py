@@ -125,3 +125,17 @@ class HumanConfig:
         self.met = met
         self.clo = clo
         self.sex = sex
+
+class LocalComfortConfig:
+    """
+    Adjust configuration used to calculate local comfort from local sensation and overall sensation.
+    """
+    def __init__(self,
+                 exponential: bool = True):
+        """
+        Args:
+            exponential:
+                A boolean to control whether to use exponential function to calculate local comfort. Default is True.
+                If set to False, n for all body parts will be set to 1.
+        """
+        self.exponential = exponential
