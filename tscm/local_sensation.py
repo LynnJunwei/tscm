@@ -88,7 +88,7 @@ class LocalSensationCalculator:
         """
         if self.setpoint_type == 'setpoint':
             met_class = min([1.3, 1.2, 1.1, 1.0, 0.8], key=lambda x: round(abs(x - self.met), 3))
-            clo_type = np.where(abs(self.clo - 0.60) <= abs(self.clo - 1.27), 'Summer', 'WinterIndoor').item()
+            clo_type = 'Summer' if abs(self.clo - 0.60) <= abs(self.clo - 1.27) else 'WinterIndoor'
             setpoint = SETPOINT.loc[(SETPOINT_TYPE_DICT[self.setpoint_type],
                                      SETPOINT_INDEX_DICT[self.setpoint_type][(clo_type, '{:.1f}'.format(met_class))])]
 
