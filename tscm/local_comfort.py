@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 
 from tscm.const import COEFFICIENT
+from tscm.config import LocalComfortConfig
 
 
 class LocalComfortCalculator:
@@ -15,14 +16,17 @@ class LocalComfortCalculator:
     """
     def __init__(self,
                  local_sensation: pd.Series,
-                 overall_sensation: float):
+                 overall_sensation: float,
+                 local_comfort_config: LocalComfortConfig = LocalComfortConfig()):
         """
         Args:
             local_sensation: A series of local sensations.
             overall_sensation: A float of overall sensation.
+            local_comfort_config: Configuration of local comfort calculation. Refer to class LocalComfortConfig.
         """
         self.local_sensation = local_sensation
         self.overall_sensation = overall_sensation
+        self.config = local_comfort_config
 
         self.body_parts = self.local_sensation.index
 
@@ -46,24 +50,26 @@ class LocalComfortCalculator:
             c72 = COEFFICIENT.loc['C72', body_part]
             c8 = COEFFICIENT.loc['C8', body_part]
             n = COEFFICIENT.loc['n', body_part]
+            if not self.config.exponential:
+                n = 1
 
             c3 = c32 if s0 >= 0 else c31
             c7 = c72 if s0 >= 0 else c71
 
             max_comfort = c6 + c7 * s0_abs
             offset = c3 * s0_abs + c8
-            left_slope = (-4 - max_comfort) / (abs(-4 + offset) ** n)
-            right_slope = (-4 - max_comfort) / (abs(4 + offset) ** n)
+            left_slope = (max_comfort + 4) / ((-offset + 4) ** n)
+            right_slope = (-max_comfort - 4) / ((offset + 4) ** n)
             s1_offset = s1 + offset
-
             local_comfort_i = (
                     (
                             (left_slope - right_slope) / (1 + math.exp(25 * s1_offset))
                             + right_slope
                     )
-                    * (abs(s1_offset) ** n)
+                    * (abs(s1_offset) ** n) * np.sign(s1_offset)
                     + max_comfort
             )
+
             local_comfort[body_part] = np.clip(local_comfort_i, -4, 4)
 
         return local_comfort
@@ -80,39 +86,18 @@ class LocalComfortCalculator:
 
 if __name__ == '__main__':
     local_sensation = pd.Series({
-        'Head': 4,
+        'Head': -2,
         'Chest': -1,
-        'Back': -1,
-        'Pelvis': -1,
-        'LUpperArm': -4,
+        'Back': 1,
+        'Pelvis': -4,
+        'LUpperArm': 0,
         'LThigh': -1,
-        'LLeg': 0.3,
-        'LFoot': -4,
+        'LLeg': 0,
+        'LFoot': 0,
     })
-    overall_sensation = -3
+    overall_sensation = -4
     local_comfort_calculator = LocalComfortCalculator(local_sensation=local_sensation,
-                                                      overall_sensation=overall_sensation)
-    local_comfort1 = local_comfort_calculator.local_comfort
-    print(local_comfort1)
-
-    local_comforts = []
-    for i in np.arange(-4, 4.1, 0.5):
-        local_sensation = pd.Series({
-            'Head': 0.5,
-            'Chest': 1,
-            'Back': 0,
-            'Pelvis': 0,
-            'LUpperArm': i,
-            'LThigh': 0.5,
-            'LLeg': 0.3,
-            'LFoot': 0,
-        })
-        overall_sensation = local_sensation.mean()
-        local_comfort_calculator = LocalComfortCalculator(local_sensation=local_sensation,
-                                                          overall_sensation=overall_sensation)
-        local_comfort = local_comfort_calculator.local_comfort
-        local_comforts.append(local_comfort['Pelvis'])
-        print((local_comfort.sort_values(ascending=True)[0] + local_comfort.sort_values(ascending=True)[1])/2)
-    print(local_comforts)
-
-    print((8) ** (7/5))
+                                                      overall_sensation=overall_sensation,
+                                                      local_comfort_config=LocalComfortConfig(exponential=True))
+    local_comfort = local_comfort_calculator.local_comfort
+    print(local_comfort)
