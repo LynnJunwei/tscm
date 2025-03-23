@@ -59,3 +59,7 @@ class OverallComfortCalculator:
         are_hands_most_lowest = body_parts_sorted[0].endswith("Hand") and body_parts_sorted[1].endswith("Hand")
         are_feet_most_lowest = body_parts_sorted[0].endswith("Foot") and body_parts_sorted[1].endswith("Foot")
         return are_hands_most_lowest or are_feet_most_lowest
+
+    @property
+    def overall_comfort(self):
+        return self.get_overall_comfort()
