@@ -11,7 +11,8 @@ import pandas as pd
 from tscm.local_sensation import LocalSensationCalculator
 from tscm.overall_sensation import OverallSensationCalculator
 from tscm.local_comfort import LocalComfortCalculator
-from tscm.config import HumanConfig, LocalSensationConfig, OverallSensationConfig, LocalComfortConfig
+from tscm.overall_comfort import OverallComfortCalculator
+from tscm.config import HumanConfig, LocalSensationConfig, OverallSensationConfig, LocalComfortConfig, OverallComfortConfig
 
 
 class TSCMObject:
@@ -35,6 +36,7 @@ class TSCMObject:
                  local_sensation_config: LocalSensationConfig = LocalSensationConfig(),
                  overall_sensation_config: OverallSensationConfig = OverallSensationConfig(),
                  local_comfort_config: LocalComfortConfig = LocalComfortConfig(),
+                 overall_comfort_config: OverallComfortConfig = OverallComfortConfig(),
                  output: Literal['all', 'ls', 'os'] = 'all'):
         """
         Args:
@@ -52,12 +54,17 @@ class TSCMObject:
                 Configuration of local sensation calculation. Refer to class LocalSensationConfig.
             overall_sensation_config:
                 Configuration of overall sensation calculation. Refer to class OverallSensationConfig.
+            local_comfort_config:
+                Configuration of local comfort calculation. Refer to class LocalComfortConfig.
+            overall_comfort_config:
+                Configuration of overall comfort calculation. Refer to class OverallComfortConfig.
         """
         # set configurations
         self.human_config = human_config
         self.local_sensation_config = local_sensation_config
         self.overall_sensation_config = overall_sensation_config
         self.local_comfort_config = local_comfort_config
+        self.overall_comfort_config = overall_comfort_config
 
         # input
         self.skin_temperature = skin_temperature
@@ -89,6 +96,7 @@ class TSCMObject:
         self.overall_sensation = pd.Series(index=self.index)
         self.model_num = pd.Series(index=self.index)
         self.local_comfort = pd.DataFrame().reindex_like(self.ref_df)
+        self.overall_comfort = pd.Series(index=self.index)
 
         # dynamic
         if self.local_sensation_config.dynamic:
@@ -118,11 +126,12 @@ class TSCMObject:
         pool.close()
         pool.join()
         for _ in self.index:
-            i, local_sensation_i, overall_sensation_i, model_num_i, local_comfort_i = q.get()
+            i, local_sensation_i, overall_sensation_i, model_num_i, local_comfort_i, overall_comfort_i = q.get()
             self.local_sensation.loc[i, :] = local_sensation_i
             self.overall_sensation.loc[i] = overall_sensation_i
             self.model_num.loc[i] = model_num_i
             self.local_comfort.loc[i, :] = local_comfort_i
+            self.overall_comfort.loc[i] = overall_comfort_i
 
     def sub_run(self, i, q):
         """
@@ -157,6 +166,7 @@ class TSCMObject:
             model_num_i = None
             overall_sensation_i = None
             local_comfort_i = None
+            overall_comfort_i = None
 
         elif self.output == 'os':
             # calculate local sensation
@@ -180,6 +190,7 @@ class TSCMObject:
             overall_sensation_i = overall_sensation_model.overall_sensation
 
             local_comfort_i = None
+            overall_comfort_i = None
 
         else:  # elif self.output == 'all':
             # calculate local sensation
@@ -202,9 +213,17 @@ class TSCMObject:
             model_num_i = overall_sensation_model.model_num
             overall_sensation_i = overall_sensation_model.overall_sensation
             # calculate local comfort
-            local_comfort_model = LocalComfortCalculator(local_sensation=local_sensation_i,
-                                                         overall_sensation=overall_sensation_i,
-                                                         local_comfort_config=self.local_comfort_config)
+            local_comfort_model = LocalComfortCalculator(
+                local_sensation=local_sensation_i,
+                overall_sensation=overall_sensation_i,
+                local_comfort_config=self.local_comfort_config
+            )
             local_comfort_i = local_comfort_model.local_comfort
+            # calculate overall comfort
+            overall_comfort_model = OverallComfortCalculator(
+                local_comfort=local_comfort_i,
+                overall_comfort_config=self.overall_comfort_config
+            )
+            overall_comfort_i = overall_comfort_model.overall_comfort
 
-        q.put((i, local_sensation_i, overall_sensation_i, model_num_i, local_comfort_i))
+        q.put((i, local_sensation_i, overall_sensation_i, model_num_i, local_comfort_i, overall_comfort_i))
