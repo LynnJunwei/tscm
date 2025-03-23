@@ -139,3 +139,20 @@ class LocalComfortConfig:
                 If set to False, n for all body parts will be set to 1.
         """
         self.exponential = exponential
+
+class OverallComfortConfig:
+    """
+    Adjust configuration used to calculate overall comfort from local comfort.
+    """
+    def __init__(self,
+                 is_transient: bool = False,
+                 is_controlled: bool = False):
+        """
+        Args:
+            is_transient:
+                A boolean to control whether to calculate transient comfort. Default is False.
+            is_controlled:
+                A boolean to control whether to calculate controlled comfort. Default is False.
+        """
+        self.is_transient = is_transient
+        self.is_controlled = is_controlled
