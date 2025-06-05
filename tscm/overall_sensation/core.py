@@ -102,7 +102,7 @@ class OverallSensationCalculator:
             The number of overall sensation calculation model.
         """
         if self.is_cold_dominated:
-            if self.config.original_model and self.local_sensation.max() > 0:
+            if self.config.original_model and self.local_sensation.max() > 0 and self.bigger_group == "warm":
                 return 5
             if not self.config.original_model:
                 # modified models
