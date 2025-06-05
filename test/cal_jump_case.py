@@ -23,14 +23,14 @@ def get_whole_ts(local_ts_df, overall_sensation_config):
 
 
 if __name__ == '__main__':
-    local_ts_df = pd.read_excel('test_case/model 5-7.xlsx', index_col=0, sheet_name='Sheet1')
+    local_ts_df = pd.read_excel(r"C:\Users\user\OneDrive - The Hong Kong Polytechnic University\Journal Paper\CBE model smoothing\jump sample\2\model 3-7 - 副本.xlsx", index_col=0, sheet_name='Sheet1')
 
     human_config = HumanConfig(sex='male', met=1, clo=0.5)
-    overall_sensation_config_origin = OverallSensationConfig(external_smooth=True, original_model=True,
+    overall_sensation_config_origin = OverallSensationConfig(external_smooth=False, original_model=True,
                                                              external_smooth_adjusted=True,
                                                              external_smooth_alpha=15,
                                                              internal_smooth=False)
-    overall_sensation_config_modified = OverallSensationConfig(external_smooth=True, original_model=False,
+    overall_sensation_config_modified = OverallSensationConfig(external_smooth=False, original_model=False,
                                                                external_smooth_adjusted=True,
                                                                external_smooth_alpha=15,
                                                                external_smooth_simplified=False,
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     whole_ts_origin, model_num = get_whole_ts(local_ts_df, overall_sensation_config_origin)
     whole_ts_modified, _ = get_whole_ts(local_ts_df, overall_sensation_config_modified)
     whole_ts_df = pd.concat([whole_ts_origin, whole_ts_modified], axis=1, keys=['origin', 'modified'])
-    whole_ts_df.to_csv('test_case/model 5-7 smoothed.csv')
+    whole_ts_df.to_csv('test_case/model 3-7_2.csv')
 
     plt.figure(layout='constrained')
     sns.lineplot(whole_ts_df, lw=3)

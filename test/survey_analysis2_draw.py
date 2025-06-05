@@ -49,7 +49,7 @@ if __name__ == '__main__':
     plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, wspace=0.4, hspace=0.4)
 
     des = ('Case description'
-           '\n1: Indoor (cool) / Indoor (warm)'
+           '\n1: Indoor (cool) / Indoor (gradually warmer)'
            '\n2: Indoor (cool) / Local cooling'
            '\n3: Indoor (cool) / Local heating'
            '\n4: Indoor (warm) / Local cooling'
@@ -57,7 +57,7 @@ if __name__ == '__main__':
            '\n6: Outdoor (fully shaded) / Local cooling'
            '\n7: Outdoor (partly shaded) / Local cooling')
 
-    plt.text(28.5, 3.5, des, va='top', ha='left', fontsize=9, linespacing=1.5)
+    plt.text(27.5, 3.5, des, va='top', ha='left', fontsize=9, linespacing=1.5)
 
     plt.savefig('exp_result-1.png')
     # plt.savefig('exp_result-3.png')
