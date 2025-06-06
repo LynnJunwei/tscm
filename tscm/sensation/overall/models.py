@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from tscm.const import COEFFICIENT, DOMINANT_BODY_PARTS
-import tscm.overall_sensation.utilities as utils
+import tscm.sensation.overall.utilities as utils
 
 
 # ------------------------------Utilities for Sensation Model-----------------------------------------------

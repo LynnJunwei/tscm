@@ -8,10 +8,10 @@ import warnings
 
 import pandas as pd
 
-from tscm.local_sensation import LocalSensationCalculator
-from tscm.overall_sensation import OverallSensationCalculator
-from tscm.local_comfort import LocalComfortCalculator
-from tscm.overall_comfort import OverallComfortCalculator
+from tscm.sensation.local import LocalSensationCalculator
+from tscm.sensation.overall import OverallSensationCalculator
+from tscm.comfort.local import LocalComfortCalculator
+from tscm.comfort.overall import OverallComfortCalculator
 from tscm.config import HumanConfig, LocalSensationConfig, OverallSensationConfig, LocalComfortConfig, OverallComfortConfig
 
 

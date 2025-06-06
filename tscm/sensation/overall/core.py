@@ -8,8 +8,8 @@ import numpy as np
 
 from tscm.const import DOMINANT_BODY_PARTS
 from tscm.config import OverallSensationConfig
-import tscm.overall_sensation.utilities as utils
-import tscm.overall_sensation.models as models
+import tscm.sensation.overall.utilities as utils
+import tscm.sensation.overall.models as models
 
 
 class OverallSensationCalculator:
