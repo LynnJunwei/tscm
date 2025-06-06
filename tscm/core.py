@@ -17,13 +17,13 @@ from tscm.config import HumanConfig, LocalSensationConfig, OverallSensationConfi
 
 class TSCMObject:
     """
-    Object for thermal local_sensation_sorted model.
+    Object for thermal sensation model.
 
     Attributes:
         local_sensation:
-            A dataframe of results of local local_sensation_sorted.
+            A dataframe of results of local sensation.
         overall_sensation:
-            A series of results of overall local_sensation_sorted.
+            A series of results of overall sensation.
         model_num:
             A series of model numbers.
     """
@@ -44,10 +44,10 @@ class TSCMObject:
                 A dataframe of measured or simulated skin temperatures with timestamp.
             delta_skin_temperature:
                 A series of derivative of skin temperatures with timestamp.
-                Only needed and used for dynamic local local_sensation_sorted.
+                Only needed and used for dynamic local sensation.
             delta_core_temperature:
                 A series of derivative of core temperatures with timestamp.
-                Only needed and used for dynamic local local_sensation_sorted.
+                Only needed and used for dynamic local sensation.
             human_config:
                 Configuration of human object. Refer to class HumanConfig.
             local_sensation_config:

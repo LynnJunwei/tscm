@@ -14,7 +14,7 @@ import tscm.overall_sensation.models as models
 
 class OverallSensationCalculator:
     """
-    Calculate overall local_sensation_sorted for a set of local sensations.
+    Calculate overall sensation for a set of local sensations.
     """
 
     def __init__(self, local_sensation: pd.Series, overall_sensation_config: OverallSensationConfig):
