@@ -143,7 +143,7 @@ def _extreme_modifier(local_sensation, baseline_sensation) -> float:
 
 def check_input_sensation(model):
     @wraps(model)
-    def wrapper(local_sensation):
+    def wrapper(local_sensation, *args, **kwargs):
         body_parts_num = len(local_sensation)
         if body_parts_num == 0:
             return 0
@@ -151,7 +151,7 @@ def check_input_sensation(model):
             return local_sensation.iloc[0]
         if body_parts_num == 2 and utils.are_hands_feet_most_extreme(local_sensation):
             return local_sensation.mean()
-        return model(local_sensation)
+        return model(local_sensation, *args, **kwargs)
     return wrapper
 
 
@@ -222,7 +222,8 @@ class OriginalModel:
     @check_input_sensation
     def dominated_cold(local_sensation) -> float:
         """Return the overall sensation calculated by opposite-dominated cold model."""
-        return min(local_sensation[DOMINANT_BODY_PARTS])
+        return min(local_sensation[[body_part for body_part in local_sensation.index
+                                    if body_part in DOMINANT_BODY_PARTS]])
 
 
     @staticmethod
@@ -674,3 +675,19 @@ class SmoothedModifiedModel(ModifiedModel):
             return SmoothedModifiedModel.high_level_cold(local_sensation)
         if sensation_level == "low":
             return SmoothedModifiedModel.low_level_cold(local_sensation, alpha)
+
+if __name__ == '__main__':
+    test_sensation = pd.Series({
+        "Head": 1.5,
+        "LArm": 1.0,
+        "RArm": 1.0,
+        "LHand": -1.5,
+        "RHand": -1.5,
+        "Chest": 2.5,
+    })
+    print("OriginalModel.high_level_warm:", OriginalModel.high_level_warm(test_sensation))
+    print("OriginalModel.high_level_cold:", OriginalModel.high_level_cold(test_sensation))
+    print("OriginalModel.low_level_warm:", OriginalModel.low_level_warm(test_sensation))
+    print("OriginalModel.low_level_cold:", OriginalModel.low_level_cold(test_sensation))
+    print("OriginalModel.dominated_cold:", OriginalModel.dominated_cold(test_sensation))
+    print("SmoothedModifiedModel.low_level_warm:", SmoothedModifiedModel.low_level_warm(test_sensation, 0.5))
