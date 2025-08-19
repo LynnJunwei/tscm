@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/11/1 12:31
 # @Author  : Eric
-from typing import Optional, Literal
+from typing import Literal
 import warnings
 
 

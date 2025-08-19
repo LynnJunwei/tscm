@@ -6,10 +6,10 @@ from typing import Literal
 import pandas as pd
 import numpy as np
 
-from tscm.const import DOMINANT_BODY_PARTS
-from tscm.config import OverallSensationConfig
-import tscm.sensation.overall.utilities as utils
-import tscm.sensation.overall.models as models
+from ...const import DOMINANT_BODY_PARTS
+from ...config import OverallSensationConfig
+from . import utils
+from . import models
 
 
 class OverallSensationCalculator:
