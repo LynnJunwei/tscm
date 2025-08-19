@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from operator import index
 from typing import Optional
 import multiprocessing as mp
 import warnings
@@ -48,6 +49,13 @@ class LocalSensationModel:
                 self.local_sensation_config.dynamic = False
                 warnings.warn('No input of delta core/skin temperature.'
                               'Dynamic influence on local sensations will not be calculated', RuntimeWarning)
+        else:
+            if self.delta_core_temperature is None:
+                self.delta_core_temperature = pd.Series(index=self.skin_temperature.index)
+                self.delta_core_temperature.loc[:] = 0.0
+            if self.delta_skin_temperature is None:
+                self.delta_skin_temperature = pd.DataFrame().reindex_like(self.skin_temperature)
+                self.delta_skin_temperature.loc[:, :] = 0.0
 
     def run(self, num_cores: int = 2):
         """
