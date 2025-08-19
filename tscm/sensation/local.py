@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Time    : 2023/10/16 15:43
-# @Author  : Eric
 from typing import Optional
 import math
 

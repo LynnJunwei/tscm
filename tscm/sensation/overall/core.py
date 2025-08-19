@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/7/4
-# @Author  : Eric
 from typing import Literal
 
 import pandas as pd

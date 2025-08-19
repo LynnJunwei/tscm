@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Time    : 2023/9/28 18:45
-# @Author  : Eric
 from typing import Optional
 import multiprocessing as mp
 import warnings

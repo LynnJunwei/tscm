@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2024/8/22
-# @Author  : Eric
 import pandas as pd
 import numpy as np
 from functools import wraps
