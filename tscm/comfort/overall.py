@@ -1,7 +1,8 @@
+# -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
 
-from tscm.config import OverallComfortConfig
+from ..config import OverallComfortConfig
 
 
 class OverallComfortCalculator:

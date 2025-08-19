@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2025/3/19
-# @Author  : Eric
 import math
 
 import pandas as pd
 import numpy as np
 
-from tscm.const import COEFFICIENT
-from tscm.config import LocalComfortConfig
+from ..const import COEFFICIENT
+from ..config import LocalComfortConfig
 
 
 class LocalComfortCalculator:
