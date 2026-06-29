@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-from operator import index
 from typing import Optional
 import multiprocessing as mp
 import warnings
 
 import pandas as pd
 
-from .sensation.local import LocalSensationCalculator
-from .sensation.overall import OverallSensationCalculator
-from .comfort.local import LocalComfortCalculator
-from .comfort.overall import OverallComfortCalculator
+from tscm.indicator.local_sensation.local import LocalSensationCalculator
+from tscm.indicator.overall_sensation.overall import OverallSensationCalculator
+from tscm.indicator.local_comfort.local import LocalComfortCalculator
+from tscm.indicator.overall_comfort.overall import OverallComfortCalculator
 from .config import HumanConfig, LocalSensationConfig, OverallSensationConfig, LocalComfortConfig, OverallComfortConfig
 
 

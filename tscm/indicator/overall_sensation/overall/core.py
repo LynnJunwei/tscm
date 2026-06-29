@@ -4,8 +4,8 @@ from typing import Literal
 import pandas as pd
 import numpy as np
 
-from ...const import DOMINANT_BODY_PARTS
-from ...config import OverallSensationConfig
+from tscm.const import DOMINANT_BODY_PARTS
+from tscm.config import OverallSensationConfig
 from . import utils
 from . import models
 

@@ -5,8 +5,8 @@ import math
 import pandas as pd
 import numpy as np
 
-from ..const import SETPOINT, SETPOINT_TYPE_DICT, SETPOINT_INDEX_DICT, LIMIT_TYPE_DICT, COEFFICIENT, MEAN_TSK_BODY_PARTS, MEAN_TSK_COEFFICIENT
-from ..config import HumanConfig, LocalSensationConfig
+from tscm.const import SETPOINT, SETPOINT_TYPE_DICT, SETPOINT_INDEX_DICT, LIMIT_TYPE_DICT, COEFFICIENT, MEAN_TSK_BODY_PARTS, MEAN_TSK_COEFFICIENT
+from tscm.config import HumanConfig, LocalSensationConfig
 
 
 class LocalSensationCalculator:

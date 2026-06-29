@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 
-from ..config import OverallComfortConfig
+from tscm.config import OverallComfortConfig
 
 
 class OverallComfortCalculator:

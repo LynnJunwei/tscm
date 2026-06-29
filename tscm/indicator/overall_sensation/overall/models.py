@@ -4,7 +4,7 @@ import numpy as np
 from functools import wraps
 
 from tscm.const import COEFFICIENT, DOMINANT_BODY_PARTS
-import tscm.sensation.overall.utils as utils
+import tscm.indicator.overall_sensation.overall.utils as utils
 
 
 # ------------------------------Utilities for Sensation Model-----------------------------------------------
