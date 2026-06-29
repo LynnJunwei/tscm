@@ -81,21 +81,3 @@ class LocalComfortCalculator:
             A series of local comfort.
         """
         return self.get_local_comfort()
-
-if __name__ == '__main__':
-    local_sensation = pd.Series({
-        'Head': -2,
-        'Chest': -1,
-        'Back': 1,
-        'Pelvis': -4,
-        'LUpperArm': 0,
-        'LThigh': -1,
-        'LLeg': 0,
-        'LFoot': 0,
-    })
-    overall_sensation = -4
-    local_comfort_calculator = LocalComfortCalculator(local_sensation=local_sensation,
-                                                      overall_sensation=overall_sensation,
-                                                      local_comfort_config=LocalComfortConfig(exponential=True))
-    local_comfort = local_comfort_calculator.local_comfort
-    print(local_comfort)

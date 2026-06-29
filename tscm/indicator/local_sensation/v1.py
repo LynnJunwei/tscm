@@ -172,10 +172,3 @@ class LocalSensationCalculator:
         """A series of local sensations for different body parts."""
         return self.get_local_sensation()
 
-
-if __name__ == '__main__':
-    a = [1.3, 1.2, 1.1, 1.0, 0.8]
-    b = 1.05
-    print([round(abs(i - b), 3) for i in a])
-    m = min(a, key=lambda x: round(abs(x - b), 3))
-    print(m)
