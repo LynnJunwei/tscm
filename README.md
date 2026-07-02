@@ -12,14 +12,14 @@ making it suitable for both indoor and outdoor comfort studies. Currently, a fiv
 
 ## Note
 ### Fix in Part V
-- Equation (7) was corrected from:<br>
-$$F_{(i)} = a_{(i)} [(Y_{\text{bigger-group}} - x_{(i)}) - c_{(i)}] + b_{(i)}$$<br>
-to:<br>
+- Equation (7) was corrected from:\
+$$F_{(i)} = a_{(i)} [(Y_{\text{bigger-group}} - x_{(i)}) - c_{(i)}] + b_{(i)}$$\
+to:\
 $$F_{(i)} = a_{(i)} [(x_{(i)} - Y_{\text{bigger-group}}) - c_{(i)}] + b_{(i)}$$
 
-- Equation (9) was corrected from:<br>
-$$F_{(i)} = a_{(i)} [(Y_{\text{all}} - x_{(i)}) - c_{(i)}] + b_{(i)}$$<br>
-to:<br>
+- Equation (9) was corrected from:\
+$$F_{(i)} = a_{(i)} [(Y_{\text{all}} - x_{(i)}) - c_{(i)}] + b_{(i)}$$\
+to:\
 $$F_{(i)} = a_{(i)} [(x_{(i)} - Y_{\text{all}}) - c_{(i)}] + b_{(i)}$$
 
 ## References
