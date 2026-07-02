@@ -4,11 +4,22 @@ This repository contains the code for the Thermal Sensation and Comfort Model (T
 TSCM is a computational framework designed to predict human thermal responses under non-uniform and transient environments.
 Unlike traditional indices that assume uniform and steady conditions, TSCM incorporates dynamic and spatially asymmetric effects,
 making it suitable for both indoor and outdoor comfort studies. Currently, a five-part series has been developed:
-1. **[Part 1: Local Sensation Models](https://doi.org/10.1016/j.buildenv.2009.06.018)** – logistic regression linking skin/core temperatures to local sensations.
-2. **[Part 2: Local Comfort Models](https://doi.org/10.1016/j.buildenv.2009.06.015)** – asymmetrical curves mapping local sensations to local comfort.
-3. **[Part 3: Overall Models](https://doi.org/10.1016/j.buildenv.2009.06.020)** - pieced methods combining local perceptions into overall sensation/comfort.
-4. **[Part 4: Smoothed Overall Sensation Models](https://doi.org/10.1016/j.buildenv.2013.11.004)** - ensuring continuity in time-sequential predictions.
-5. **[Part 5: Enhanced Overall Sensation Models](https://doi.org/10.1016/j.buildenv.2025.113562)** - further addressing discontinuity and inaccuracy under “dominated cold” scenarios in warm environments.
+1. **[Part I: Local Sensation Models](https://doi.org/10.1016/j.buildenv.2009.06.018)** – logistic regression linking skin/core temperatures to local sensations.
+2. **[Part II: Local Comfort Models](https://doi.org/10.1016/j.buildenv.2009.06.015)** – asymmetrical curves mapping local sensations to local comfort.
+3. **[Part III: Overall Models](https://doi.org/10.1016/j.buildenv.2009.06.020)** - pieced methods combining local perceptions into overall sensation/comfort.
+4. **[Part IV: Smoothed Overall Sensation Models](https://doi.org/10.1016/j.buildenv.2013.11.004)** - ensuring continuity in time-sequential predictions.
+5. **[Part V: Enhanced Overall Sensation Models](https://doi.org/10.1016/j.buildenv.2025.113562)** - further addressing discontinuity and inaccuracy under “dominated cold” scenarios in warm environments.
+
+## Note
+### Fix in Part V
+- Equation (7) was corrected from:
+$$F_{(i)} = a_{(i)} [(Y_{\text{bigger-group}} - x_{(i)}) - c_{(i)}] + b_{(i)}$$
+to:
+$$F_{(i)} = a_{(i)} [(x_{(i)} - Y_{\text{bigger-group}}) - c_{(i)}] + b_{(i)}$$
+- Equation (9) was corrected from:
+$$F_{(i)} = a_{(i)} [(Y_{\text{all}} - x_{(i)}) - c_{(i)}] + b_{(i)}$$
+to:
+$$F_{(i)} = a_{(i)} [(x_{(i)} - Y_{\text{all}}) - c_{(i)}] + b_{(i)}$$
 
 ## References
 - Zhang, H., Arens, E., Huizenga, C., & Han, T. (2010). Thermal sensation and comfort models for non-uniform and transient environments: Part I: Local sensation of individual body parts. Building and Environment, 45(2), 380–388. https://doi.org/10.1016/j.buildenv.2009.06.018
